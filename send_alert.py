@@ -20,6 +20,10 @@ cached_ticker_prices = list()
 logging.basicConfig(level=os.environ.get(logging_level))
 
 
+def get_decimal(s):
+    return Decimal(s)
+
+
 def get_cached_ticker_prices(market: str):
     for cached_ticker_price in cached_ticker_prices:
         if cached_ticker_price['market'] == market:
@@ -78,14 +82,6 @@ def process_alert(idx: int, alert: dict):
 
         return
 
-    # price increased
-    if price > alert['price']:
-        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        return
-
     # trailing price hit
     if price <= alert['trailing_price']:
         alerts[idx]['trailing_price'] = price * alert['threshold']
@@ -94,6 +90,21 @@ def process_alert(idx: int, alert: dict):
 
         send_email(json.dumps(alert, indent=4, sort_keys=True))
 
+    # price increased
+    if price > alert['price']:
+        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+        alerts[idx]['price'] = price
+        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        return
+
+    # price decreased
+    if price <= alert['price']:
+        alerts[idx]['price'] = price
+        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        return
+
 
 bitvavo = Bitvavo({
     'APIKEY': os.environ.get('APIKEY'),
@@ -101,7 +112,7 @@ bitvavo = Bitvavo({
 })
 
 with open(alerts_file_name, 'r') as fp:
-    alerts = json.load(fp)
+    alerts = json.load(fp, parse_float=get_decimal)
 
 if not alerts:
     exit(0)
