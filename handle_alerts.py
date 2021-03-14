@@ -84,7 +84,6 @@ def process_alert(idx: int, alert: dict):
 
     # trailing price hit
     if price <= alert['trailing_price']:
-        alerts[idx]['trailing_price'] = price * alert['threshold']
         alerts[idx]['price'] = price
         alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
