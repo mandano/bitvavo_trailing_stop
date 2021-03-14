@@ -14,10 +14,9 @@ from dotenv import load_dotenv
 dotenv_path = join(dirname(__file__), '/.env')
 load_dotenv('.env')
 alerts_file_name='alerts.json'
-logging_level = os.environ.get("LOGGING_LEVEL")
 
 cached_ticker_prices = list()
-logging.basicConfig(level=os.environ.get(logging_level))
+logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
 def get_decimal(s):
@@ -63,6 +62,7 @@ def process_alert(idx: int, alert: dict):
 
     if ticker_price is None:
         ticker_price = bitvavo.tickerPrice({'market': alert['market']})
+        cached_ticker_prices.append(ticker_price)
 
     if 'price' not in ticker_price:
         return
