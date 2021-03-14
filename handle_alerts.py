@@ -13,111 +13,126 @@ from dotenv import load_dotenv
 
 dotenv_path = join(dirname(__file__), '/.env')
 load_dotenv('.env')
-alerts_file_name='alerts.json'
 
-cached_ticker_prices = list()
 logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
-def get_decimal(s):
-    return Decimal(s)
+class AlertHandler(object):
+    fetched_ticker_prices = list()
+    alerts_file_name = 'alerts.json'
+    client = Bitvavo({
+        'APIKEY': os.environ.get('APIKEY'),
+        'APISECRET': os.environ.get('APISECRET')
+    })
+    alerts = list()
+
+    def __init__(self):
+        self.load_alerts()
+
+    def load_alerts(self):
+        with open(self.alerts_file_name, 'r') as fp:
+            self.alerts = json.load(fp, parse_float=self.get_decimal)
+
+        if not self.alerts:
+            logging.info("No alerts set.")
+
+            exit(0)
+
+    def save_alerts(self):
+        with open(self.alerts_file_name, 'w') as fp:
+            json.dump(self.alerts, fp, indent=4, sort_keys=True)
+
+    @classmethod
+    def get_decimal(cls, s):
+        return Decimal(s)
+
+    def get_fetched_ticker_price(self, market: str):
+        for fetched_ticker_price in self.fetched_ticker_prices:
+            if fetched_ticker_price['market'] == market:
+                return fetched_ticker_price
+
+        return None
+
+    @classmethod
+    def send_email(cls, message: str):
+        smtp_server = os.environ.get('SMTP_SERVER_URI')
+        port = os.environ.get('SMTP_SERVER_PORT')
+        email_user = os.environ.get('EMAIL_USER')
+        email_user_pw = os.environ.get('EMAIL_USER_PW')
+
+        context = ssl.create_default_context()
+
+        try:
+            server = smtplib.SMTP(smtp_server, port)
+            server.ehlo()  # Can be omitted
+            server.starttls(context=context)  # Secure the connection
+            server.ehlo()  # Can be omitted
+            server.login(email_user, email_user_pw)
+
+            server.sendmail(
+                os.environ.get('SENDER_EMAIL'),
+                os.environ.get('RECEIVER_EMAIL'),
+                message
+            )
+        except Exception as e:
+            logging.error(e)
+        finally:
+            server.quit()
+
+    def process_alerts(self):
+        for idx, alert in enumerate(self.alerts):
+            self.process_alert(idx, alert)
+
+    def process_alert(self, idx: int, alert: dict):
+        ticker_price = self.get_fetched_ticker_price(alert['market'])
+
+        if ticker_price is None:
+            ticker_price = self.client.tickerPrice({'market': alert['market']})
+            self.fetched_ticker_prices.append(ticker_price)
+
+        if 'price' not in ticker_price:
+            return
+
+        price = Decimal(ticker_price['price'])
+
+        if alert['status'] == "hit":
+            return
+
+        # first time
+        if alert['status'] is None:
+            self.alerts[idx]['init_price'] = price
+            self.alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+            self.alerts[idx]['price'] = price
+            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.alerts[idx]['status'] = 'active'
+
+            return
+
+        # trailing price hit
+        if price <= alert['trailing_price']:
+            self.alerts[idx]['price'] = price
+            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            if 'send_email' in alert['actions']:
+                self.send_email(json.dumps(alert, indent=4, sort_keys=True))
+
+        # price increased
+        if price > alert['price']:
+            self.alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+            self.alerts[idx]['price'] = price
+            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            return
+
+        # price decreased
+        if price <= alert['price']:
+            self.alerts[idx]['price'] = price
+            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            return
 
 
-def get_cached_ticker_prices(market: str):
-    for cached_ticker_price in cached_ticker_prices:
-        if cached_ticker_price['market'] == market:
-            return cached_ticker_price
-
-    return None
-
-
-def send_email(message: str):
-    smtp_server = os.environ.get('SMTP_SERVER_URI')
-    port = os.environ.get('SMTP_SERVER_PORT')
-    email_user = os.environ.get('EMAIL_USER')
-    email_user_pw = os.environ.get('EMAIL_USER_PW')
-
-    context = ssl.create_default_context()
-
-    try:
-        server = smtplib.SMTP(smtp_server, port)
-        server.ehlo()  # Can be omitted
-        server.starttls(context=context)  # Secure the connection
-        server.ehlo()  # Can be omitted
-        server.login(email_user, email_user_pw)
-
-        server.sendmail(
-            os.environ.get('SENDER_EMAIL'),
-            os.environ.get('RECEIVER_EMAIL'),
-            message
-        )
-    except Exception as e:
-        logging.error(e)
-    finally:
-        server.quit()
-
-
-def process_alert(idx: int, alert: dict):
-    ticker_price = get_cached_ticker_prices(alert['market'])
-
-    if ticker_price is None:
-        ticker_price = bitvavo.tickerPrice({'market': alert['market']})
-        cached_ticker_prices.append(ticker_price)
-
-    if 'price' not in ticker_price:
-        return
-
-    price = Decimal(ticker_price['price'])
-
-    if alert['status'] == "hit":
-        return
-
-    # first time
-    if alert['status'] is None:
-        alerts[idx]['init_price'] = price
-        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        alerts[idx]['status'] = 'active'
-
-        return
-
-    # trailing price hit
-    if price <= alert['trailing_price']:
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        send_email(json.dumps(alert, indent=4, sort_keys=True))
-
-    # price increased
-    if price > alert['price']:
-        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        return
-
-    # price decreased
-    if price <= alert['price']:
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        return
-
-
-bitvavo = Bitvavo({
-    'APIKEY': os.environ.get('APIKEY'),
-    'APISECRET': os.environ.get('APISECRET')
-})
-
-with open(alerts_file_name, 'r') as fp:
-    alerts = json.load(fp, parse_float=get_decimal)
-
-if not alerts:
-    exit(0)
-
-for idx, alert in enumerate(alerts):
-    process_alert(idx, alert)
-
-with open(alerts_file_name, 'w') as fp:
-    json.dump(alerts, fp, indent=4, sort_keys=True)
+if __name__ == '__main__':
+    ah = AlertHandler()
+    ah.process_alerts()
+    ah.save_alerts()
