@@ -1,4 +1,7 @@
 import datetime
+import smtplib
+import ssl
+import logging
 import simplejson as json
 import os
 from decimal import Decimal
@@ -14,6 +17,7 @@ alerts_file_name='alerts.json'
 logging_level = os.environ.get("LOGGING_LEVEL")
 
 cached_ticker_prices = list()
+logging.basicConfig(level=os.environ.get(logging_level))
 
 
 def get_cached_ticker_prices(market: str):
@@ -24,8 +28,71 @@ def get_cached_ticker_prices(market: str):
     return None
 
 
-def trigger_action():
-    print('Alert!')
+def send_email(message: str):
+    smtp_server = os.environ.get('SMTP_SERVER_URI')
+    port = os.environ.get('SMTP_SERVER_PORT')
+    email_user = os.environ.get('EMAIL_USER')
+    email_user_pw = os.environ.get('EMAIL_USER_PW')
+
+    context = ssl.create_default_context()
+
+    try:
+        server = smtplib.SMTP(smtp_server, port)
+        server.ehlo()  # Can be omitted
+        server.starttls(context=context)  # Secure the connection
+        server.ehlo()  # Can be omitted
+        server.login(email_user, email_user_pw)
+
+        server.sendmail(
+            os.environ.get('SENDER_EMAIL'),
+            os.environ.get('RECEIVER_EMAIL'),
+            message
+        )
+    except Exception as e:
+        logging.error(e)
+    finally:
+        server.quit()
+
+
+def process_alert(idx: int, alert: dict):
+    ticker_price = get_cached_ticker_prices(alert['market'])
+
+    if ticker_price is None:
+        ticker_price = bitvavo.tickerPrice({'market': alert['market']})
+
+    if 'price' not in ticker_price:
+        return
+
+    price = Decimal(ticker_price['price'])
+
+    if alert['status'] == "hit":
+        return
+
+    # first time
+    if alert['status'] is None:
+        alerts[idx]['init_price'] = price
+        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+        alerts[idx]['price'] = price
+        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        alerts[idx]['status'] = 'active'
+
+        return
+
+    # price increased
+    if price > alert['price']:
+        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+        alerts[idx]['price'] = price
+        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        return
+
+    # trailing price hit
+    if price <= alert['trailing_price']:
+        alerts[idx]['trailing_price'] = price * alert['threshold']
+        alerts[idx]['price'] = price
+        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        send_email(json.dumps(alert, indent=4, sort_keys=True))
 
 
 bitvavo = Bitvavo({
@@ -40,45 +107,7 @@ if not alerts:
     exit(0)
 
 for idx, alert in enumerate(alerts):
-    ticker_price = get_cached_ticker_prices(alert['market'])
-
-    if ticker_price is None:
-        ticker_price = bitvavo.tickerPrice({'market': alert['market']})
-
-    if 'price' not in ticker_price:
-        continue
-
-    price = Decimal(ticker_price['price'])
-
-    if alert['status'] == "hit":
-        continue
-
-    # first time
-    if alert['status'] is None:
-        alerts[idx]['init_price'] = price
-        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        alerts[idx]['status'] = 'active'
-
-        continue
-
-    # price increased
-    if price > alert['price']:
-        alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        continue
-
-    # trailing price hit
-    if price <= alert['trailing_price']:
-        alerts[idx]['trailing_price'] = price * alert['threshold']
-        alerts[idx]['price'] = price
-        alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        trigger_action()
+    process_alert(idx, alert)
 
 with open(alerts_file_name, 'w') as fp:
     json.dump(alerts, fp, indent=4, sort_keys=True)
-
