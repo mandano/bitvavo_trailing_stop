@@ -18,7 +18,7 @@ logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
 class AlertHandler(object):
-    fetched_ticker_prices = list()
+    ticker_prices = list()
     alerts_file_name = 'alerts.json'
     client = Bitvavo({
         'APIKEY': os.environ.get('APIKEY'),
@@ -34,7 +34,7 @@ class AlertHandler(object):
             self.alerts = json.load(fp, parse_float=self.get_decimal)
 
         if not self.alerts:
-            logging.info("No alerts set.")
+            logging.warning("No alerts set.")
 
             exit(0)
 
@@ -47,9 +47,9 @@ class AlertHandler(object):
         return Decimal(s)
 
     def get_fetched_ticker_price(self, market: str):
-        for fetched_ticker_price in self.fetched_ticker_prices:
-            if fetched_ticker_price['market'] == market:
-                return fetched_ticker_price
+        for ticker_price in self.ticker_prices:
+            if ticker_price['market'] == market:
+                return ticker_price
 
         return None
 
@@ -88,7 +88,7 @@ class AlertHandler(object):
 
         if ticker_price is None:
             ticker_price = self.client.tickerPrice({'market': alert['market']})
-            self.fetched_ticker_prices.append(ticker_price)
+            self.ticker_prices.append(ticker_price)
 
         if 'price' not in ticker_price:
             return
