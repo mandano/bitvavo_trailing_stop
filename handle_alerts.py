@@ -112,6 +112,7 @@ class AlertHandler(object):
         if price <= alert['trailing_price']:
             self.alerts[idx]['price'] = price
             self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.alerts[idx]['status'] = 'hit'
 
             if 'send_email' in alert['actions']:
                 self.send_email(json.dumps(alert, indent=4, sort_keys=True))
