@@ -30,8 +30,13 @@ class AlertHandler(object):
         self.load_alerts()
 
     def load_alerts(self):
-        with open(self.alerts_file_name, 'r') as fp:
-            self.alerts = json.load(fp, parse_float=self.get_decimal)
+        try:
+            with open(self.alerts_file_name, 'r') as fp:
+                self.alerts = json.load(fp, parse_float=self.get_decimal)
+        except FileNotFoundError:
+            logging.error('No alert file.')
+
+            exit(0)
 
         if not self.alerts:
             logging.warning("No alerts set.")
