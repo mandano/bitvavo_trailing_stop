@@ -26,7 +26,10 @@ class AlertHandler(object):
     })
     alerts = list()
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
         self.load_alerts()
 
     def load_alerts(self):
