@@ -131,9 +131,16 @@ class AlertHandler(object):
             if 'send_email' in alert['actions']:
                 self.send_email(json.dumps(alert, indent=4, sort_keys=True))
 
-        # price increased
-        if price > alert['price']:
+        # price increased and above init price
+        if price > alert['price'] and price > alert['init_price']:
             self.alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
+            self.alerts[idx]['price'] = price
+            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            return
+
+        # price increased but below init price
+        if price > alert['price']:
             self.alerts[idx]['price'] = price
             self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
