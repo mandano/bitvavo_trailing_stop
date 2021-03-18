@@ -28,6 +28,7 @@ def test_populate_new_alert(tmp_path):
     p = d / file_name
 
     market = 'ETH-EUR'
+    ticker_price = Decimal('1511.7')
 
     alert = copy.deepcopy(alert_template)
     alert['market'] = market
@@ -41,7 +42,7 @@ def test_populate_new_alert(tmp_path):
     ticker_prices = [
         {
             'market': market,
-            'price': '1511.7'
+            'price': ticker_price
         }
     ]
 
@@ -51,12 +52,12 @@ def test_populate_new_alert(tmp_path):
     ah.load_alerts()
 
     assert ah.alerts[0]['actions'] == ["send_email", "sell"]
-    assert ah.alerts[0]['init_price'] == Decimal('1511.7')
+    assert ah.alerts[0]['init_price'] == ticker_price
     assert ah.alerts[0]['market'] == 'ETH-EUR'
-    assert ah.alerts[0]['price'] == Decimal('1511.7')
+    assert ah.alerts[0]['price'] == ticker_price
     assert ah.alerts[0]['status'] == 'active'
     assert ah.alerts[0]['trailing_percentage'] == Decimal('0.9')
-    assert ah.alerts[0]['trailing_price'] == Decimal('0.9') * Decimal('1511.7')
+    assert ah.alerts[0]['trailing_price'] == Decimal('0.9') * ticker_price
 
 
 def test_trailing_price_hit():
