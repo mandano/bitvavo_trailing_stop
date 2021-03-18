@@ -96,10 +96,16 @@ class AlertHandler(object):
 
         if ticker_price is None:
             ticker_price = self.client.tickerPrice({'market': alert['market']})
-            self.ticker_prices.append(ticker_price)
 
-        if 'price' not in ticker_price:
-            return
+            if 'price' not in ticker_price or 'market' not in ticker_price:
+                return
+
+            if alert['market'] != ticker_price['market']:
+                return
+
+            ticker_price['price'] = Decimal(ticker_price['price'])
+
+            self.ticker_prices.append(ticker_price)
 
         price = Decimal(ticker_price['price'])
 
