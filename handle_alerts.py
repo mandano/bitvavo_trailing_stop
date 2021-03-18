@@ -18,6 +18,10 @@ logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
 class AlertHandler(object):
+    STATUS_HIT = 'hit'
+    STATUS_ACTIVE = 'active'
+    STATUS_NOT_INIT = None
+
     ticker_prices = list()
     alerts_file_name = 'alerts.json'
     client = Bitvavo({
