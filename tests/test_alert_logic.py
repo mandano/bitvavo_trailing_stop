@@ -1,9 +1,10 @@
+import datetime
 from decimal import Decimal
 
 import simplejson as json
 import copy
 
-from handle_alerts import AlertHandler
+from handle_alerts import AlertHandler, BitvavoClient, Alert
 
 file_name = "alerts.json"
 
@@ -22,291 +23,309 @@ alert_template = {
 }
 
 
-def test_populate_new_alert(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+def test_populate_new_alert_init_price_set():
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
     ticker_price = Decimal('1511.7')
+    trailing_percentage = Decimal('0.9')
 
-    alert = copy.deepcopy(alert_template)
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.9')
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=init_price,
+        status=Alert.STATUS_NOT_INIT,
+        trailing_percentage=trailing_percentage,
+        trailing_price=None,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == ["send_email", "sell"]
-    assert ah.alerts[0]['init_price'] == ticker_price
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_percentage'] * ticker_price
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_percentage * ticker_price
 
 
-def test_trailing_price_hit(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+def test_populate_new_alert_init_price_not_set():
+    actions = []
     market = 'ETH-EUR'
+    init_price = None
+    ticker_price = Decimal('1511.7')
+    trailing_percentage = Decimal('0.9')
+
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=init_price,
+        status=Alert.STATUS_NOT_INIT,
+        trailing_percentage=trailing_percentage,
+        trailing_price=None,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
+
+            }
+        )
+    )
+
+    alert.update_by_client()
+
+    assert alert.actions == actions
+    assert alert.init_price == ticker_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_percentage * ticker_price
+
+
+def test_trailing_price_hit():
+    actions = []
+    market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('950')
     ticker_price = Decimal('800')
+    trailing_percentage = Decimal('0.9')
+    trailing_price = init_price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.9')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('950')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['init_price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': '800'
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_HIT
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_price']
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_HIT
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_price
 
 
-def test_price_increase_below_init_price(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+def test_price_increase_below_init_price():
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('900')
     ticker_price = Decimal('950')
+    trailing_percentage = Decimal('0.7')
+    trailing_price = init_price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.7')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('900')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['init_price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_price']
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_price
 
 
-def test_price_increase_above_init_price(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+def test_price_increase_above_init_price():
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('1100')
     ticker_price = Decimal('1200')
+    trailing_percentage = Decimal('0.9')
+    trailing_price = price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.9')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('1100')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_percentage'] * ticker_price
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_percentage * ticker_price
 
 
 def test_price_decreased_above_init_price(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('1300')
     ticker_price = Decimal('1200')
+    trailing_percentage = Decimal('0.9')
+    trailing_price = price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.9')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('1300')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_price']
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_price
 
 
 def test_price_decreased_below_init_price(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('900')
     ticker_price = Decimal('850')
+    trailing_percentage = Decimal('0.8')
+    trailing_price = price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.8')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('900')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_price']
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_price
 
 
 def test_price_decreased_hitting_init_price(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-    p = d / file_name
-
+    actions = []
     market = 'ETH-EUR'
+    init_price = Decimal('1000')
+    price = Decimal('1100')
     ticker_price = Decimal('850')
+    trailing_percentage = Decimal('0.7')
+    trailing_price = price * trailing_percentage
 
-    alert = copy.deepcopy(alert_template)
-    alert['actions'] = []
-    alert['market'] = market
-    alert['init_price'] = Decimal('1000')
-    alert['trailing_percentage'] = Decimal('0.7')
-    alert['status'] = AlertHandler.STATUS_ACTIVE
-    alert['price'] = Decimal('1100')
-    alert['trailing_price'] = alert['trailing_percentage'] * alert['price']
+    alert = Alert(
+        actions=actions,
+        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=Alert.STATUS_ACTIVE,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": ticker_price
 
-    file_content = json.dumps([alert], indent=4, sort_keys=True)
+            }
+        )
+    )
 
-    p.write_text(file_content)
+    alert.update_by_client()
 
-    ticker_prices = [
-        {
-            'market': market,
-            'price': ticker_price
-        }
-    ]
-
-    ah = AlertHandler(ticker_prices=ticker_prices, alerts_file_name=p)
-    ah.process_alerts()
-    ah.save_alerts()
-    ah.load_alerts()
-
-    assert ah.alerts[0]['actions'] == []
-    assert ah.alerts[0]['init_price'] == alert['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == ticker_price
-    assert ah.alerts[0]['status'] == AlertHandler.STATUS_ACTIVE
-    assert ah.alerts[0]['trailing_percentage'] == alert['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert['trailing_price']
+    assert alert.actions == actions
+    assert alert.init_price == init_price
+    assert alert.market == market
+    assert alert.price == ticker_price
+    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.trailing_percentage == trailing_percentage
+    assert alert.trailing_price == trailing_price
