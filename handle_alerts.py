@@ -67,7 +67,7 @@ class BitvavoClient(Bitvavo):
 
         return self._response_ticker_price['price']
 
-    def place_order(self, side: str, order_type, amount: str):
+    def place_order(self, side: str, order_type: str, amount: str):
         self._response_order = self.placeOrder(
             self.market,
             side,
@@ -100,6 +100,9 @@ class Alert(object):
     status: str = None
     trailing_percentage: Decimal = None
     trailing_price: Decimal = None
+    sell = {
+        'amount': None
+    }
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -240,6 +243,44 @@ class AlertHandler(object):
     def get_decimal(cls, s):
         return Decimal(s)
 
+    def update_alerts(self):
+        for idx, alert in enumerate(self.alerts):
+            alert = Alert(
+                actions=alert['actions'],
+                dt=alert['dt'],
+                init_price=alert['init_price'],
+                market=alert['market'],
+                price=alert['price'],
+                status=alert['status'],
+                trailing_percentage=alert['trailing_percentage'],
+                trailing_price=alert['trailing_price'],
+                _client=BitvavoClient(
+                    market=alert['market']
+                )
+            )
+
+            alert.update_by_client()
+
+            if not alert.changedAttributes:
+                continue
+
+            self.alerts[idx] = alert.attributes()
+
+            if alert.STATUS_HIT != alert.status:
+                continue
+
+            if Alert.ACTION_SELL_ASSET in alert.actions:
+                trade = Trade(
+                    _client=BitvavoClient(market=alert.market),
+                    _alert=alert
+                )
+                trade.sell()
+
+            if Alert.ACTION_SEND_EMAIL in alert.actions:
+                Messages.send_email(json.dumps(alert.attributes(), indent=4, sort_keys=True))
+
+
+class Messages(object):
     @classmethod
     def send_email(cls, message: str):
         smtp_server = os.environ.get('SMTP_SERVER_URI')
@@ -266,35 +307,41 @@ class AlertHandler(object):
         finally:
             server.quit()
 
-    def sell_asset(self):
-        pass
 
-    def update_alerts(self):
-        for idx, alert in enumerate(self.alerts):
-            alert = Alert(
-                actions=alert['actions'],
-                dt=alert['dt'],
-                init_price=alert['init_price'],
-                market=alert['market'],
-                price=alert['price'],
-                status=alert['status'],
-                trailing_percentage=alert['trailing_percentage'],
-                trailing_price=alert['trailing_price'],
-                _client=BitvavoClient(
-                    market=alert['market']
-                )
-            )
+class Trade(object):
+    _client: BitvavoClient = None
+    _alert: Alert = None
 
-            alert.update_by_client()
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
 
-            if alert.changedAttributes is not None:
-                self.alerts[idx] = alert.attributes()
+    def sell(self):
+        symbol = self._alert.get_symbol()
 
-            if Alert.STATUS_HIT in alert.changedAttributes and Alert.ACTION_SEND_EMAIL in alert.actions:
-                self.send_email(json.dumps(alert, indent=4, sort_keys=True))
+        if symbol is None:
+            return False
 
-            if Alert.STATUS_HIT in alert.changedAttributes and Alert.ACTION_SELL_ASSET in alert.actions:
-                self.sell_asset()
+        if self._alert.sell['amount'] is None:
+            amount = self._client.get_balance(symbol)
+
+        try:
+            amount
+        except NameError:
+            return False
+
+        response = self._client.place_order(
+            BitvavoClient.SIDE_SELL,
+            BitvavoClient.ORDER_TYPE,
+            str(amount)
+        )
+
+        Messages.send_email(json.dumps(response, indent=4, sort_keys=True))
+
+        if 'orderId' in response:
+            return True
+
+        return False
 
 
 if __name__ == '__main__':
