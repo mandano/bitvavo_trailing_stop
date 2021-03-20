@@ -44,9 +44,9 @@ class BitvavoClient(Bitvavo):
 
     def get_balance(self, symbol):
         if self._response_balance is None:
-            self._response_balance = self.balance({'symbol': symbol})
+            self._response_balance = self.balance({'symbol': symbol})[0]
 
-            if symbol not in self._response_balance or 'available' not in self._response_balance:
+            if 'symbol' not in self._response_balance or 'available' not in self._response_balance:
                 return None
 
             return Decimal(self._response_balance['available'])
