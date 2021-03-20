@@ -105,6 +105,12 @@ class Alert(object):
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
+    def get_symbol(self):
+        if self.market is None:
+            return None
+
+        return self.market.split('-', 2)[0]
+
     def attributes(self):
         return {
             'actions': self.actions,
