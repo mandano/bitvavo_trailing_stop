@@ -17,6 +17,48 @@ load_dotenv('.env')
 logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
+class BitvavoClient(Bitvavo):
+    _response_order = None
+    _response_balance = None
+    _response_ticker_price = None
+
+    def __init__(self, **kwargs):
+        super().__init__({
+            'APIKEY': os.environ.get('APIKEY'),
+            'APISECRET': os.environ.get('APISECRET')
+        })
+
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+    def get_balance(self, symbol):
+        if self._response_balance is None:
+            self._response_balance = self.balance({'symbol': symbol})
+
+            if symbol not in self._response_balance or 'available' not in self._response_balance:
+                return None
+
+            return Decimal(self._response_balance['available'])
+
+        return None
+
+    def get_ticker_price(self, market: str):
+        if self._response_ticker_price is None:
+            self._response_ticker_price = self.tickerPrice({'market': market})
+
+            if 'price' not in self._response_ticker_price or 'market' not in self._response_ticker_price:
+                return None
+
+            if market != self._response_ticker_price['market']:
+                return None
+
+            self._response_ticker_price['price'] = Decimal(self._response_ticker_price['price'])
+
+            return self._response_ticker_price['price']
+
+        return None
+
+
 class Alert(object):
     STATUS_HIT = 'hit'
     STATUS_ACTIVE = 'active'
@@ -25,16 +67,9 @@ class Alert(object):
     ACTION_SEND_EMAIL = 'send_email'
     ACTION_SELL_ASSET = 'sell_asset'
 
-    _response_order = None
-    _response_balance = None
-    _response_ticker_price = None
+    _client: BitvavoClient = None
 
     changedAttributes = []
-
-    _client = Bitvavo({
-        'APIKEY': os.environ.get('APIKEY'),
-        'APISECRET': os.environ.get('APISECRET')
-    })
 
     actions = []
     dt: str = None
@@ -49,14 +84,6 @@ class Alert(object):
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
-    def get_balance(self, symbol):
-        self._response_balance = self._client.balance({'symbol': symbol})
-
-        if symbol not in self._response_balance or 'available' not in self._response_balance:
-            return None
-
-        return Decimal(self._response_balance['available'])
-
     def attributes(self):
         return {
             'actions': self.actions,
@@ -69,18 +96,6 @@ class Alert(object):
             'trailing_price':self.trailing_price
         }
 
-    def set_response_ticker_price_by_client(self):
-        if self._response_ticker_price is None:
-            self._response_ticker_price = self._client.tickerPrice({'market': self.market})
-
-            if 'price' not in self._response_ticker_price or 'market' not in self._response_ticker_price:
-                return None
-
-            if self.market != self._response_ticker_price['market']:
-                return None
-
-            self._response_ticker_price['price'] = Decimal(self._response_ticker_price['price'])
-
     def update_by_client(self):
         self.changedAttributes = []
 
@@ -90,9 +105,7 @@ class Alert(object):
         if self.market is None:
             return False
 
-        self.set_response_ticker_price_by_client()
-
-        price = Decimal(self._response_ticker_price['price'])
+        price = Decimal(self._client.get_ticker_price(self.market))
 
         # first time
         if self.status is None:
@@ -242,7 +255,8 @@ class AlertHandler(object):
                 price=alert['price'],
                 status=alert['status'],
                 trailing_percentage=alert['trailing_percentage'],
-                trailing_price=alert['trailing_price']
+                trailing_price=alert['trailing_price'],
+                _client=BitvavoClient()
             )
 
             alert.update_by_client()
@@ -258,5 +272,3 @@ if __name__ == '__main__':
     ah = AlertHandler()
     ah.update_alerts()
     ah.save_alerts()
-
-#asdf = ah.get_balance('ETH')
