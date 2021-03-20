@@ -1,10 +1,6 @@
 import datetime
 from decimal import Decimal
-
-import simplejson as json
-import copy
-
-from handle_alerts import AlertHandler, BitvavoClient, Alert
+from handle_alerts import BitvavoClient, Alert
 
 file_name = "alerts.json"
 
