@@ -61,9 +61,7 @@ class BitvavoClient(Bitvavo):
             if self.market != self._response_ticker_price['market']:
                 return None
 
-            self._response_ticker_price['price'] = Decimal(self._response_ticker_price['price'])
-
-            return self._response_ticker_price['price']
+            return Decimal(self._response_ticker_price['price'])
 
         return None
 
