@@ -207,7 +207,7 @@ class AlertHandler(object):
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
-        if self.alerts is None:
+        if not self.alerts:
             self.load_alerts()
 
     def load_alerts(self):
