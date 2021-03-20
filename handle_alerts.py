@@ -63,7 +63,7 @@ class BitvavoClient(Bitvavo):
 
             return Decimal(self._response_ticker_price['price'])
 
-        return None
+        return self._response_ticker_price['price']
 
     def place_order(self, side: str, order_type, amount: str):
         self._response_order = self.placeOrder(
