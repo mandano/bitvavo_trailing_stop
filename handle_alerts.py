@@ -38,6 +38,8 @@ class BitvavoClient(Bitvavo):
             self.__setattr__(k, v)
 
         if self.market is None:
+            logging.error('bitvavo: Market attribute not set.')
+
             exit(1)
 
     def get_balance(self, symbol):
