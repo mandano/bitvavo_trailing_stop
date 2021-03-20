@@ -96,6 +96,9 @@ class AlertHandler(object):
             self.process_alert(idx, alert)
 
     def process_alert(self, idx: int, alert: dict):
+        if alert['status'] == "hit":
+            return
+
         ticker_price = self.get_fetched_ticker_price(alert['market'])
 
         if ticker_price is None:
