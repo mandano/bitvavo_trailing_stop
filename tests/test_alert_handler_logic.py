@@ -1,4 +1,3 @@
-from decimal import Decimal
 import simplejson as json
 from faker import Faker
 from handle_alerts import AlertHandler, Alert
@@ -20,7 +19,7 @@ def test_load_alerts_from_file(tmp_path):
             "send_email",
             "sell_asset"
         ],
-        "datetime": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
+        "dt": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
         "init_price": fake.pydecimal(min_value=200),
         "market": market,
         "price": fake.pydecimal(min_value=0),
@@ -34,7 +33,7 @@ def test_load_alerts_from_file(tmp_path):
             "send_email",
             "sell_asset"
         ],
-        "datetime": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
+        "dt": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
         "init_price": fake.pydecimal(min_value=200),
         "market": market,
         "price": fake.pydecimal(min_value=0),
