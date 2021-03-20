@@ -47,6 +47,8 @@ class BitvavoClient(Bitvavo):
             self._response_balance = self.balance({'symbol': symbol})[0]
 
             if 'symbol' not in self._response_balance or 'available' not in self._response_balance:
+                logging.error('bitvavo:get_balance: No symbol set.')
+
                 return None
 
             return Decimal(self._response_balance['available'])
@@ -58,9 +60,13 @@ class BitvavoClient(Bitvavo):
             self._response_ticker_price = self.tickerPrice({'market': self.market})
 
             if 'price' not in self._response_ticker_price or 'market' not in self._response_ticker_price:
+                logging.error('bitvavo:get_ticker_price: No price or market in response.')
+
                 return None
 
             if self.market != self._response_ticker_price['market']:
+                logging.error('bitvavo:get_ticker_price: Market in response not equal class attribute.')
+                
                 return None
 
             return Decimal(self._response_ticker_price['price'])
