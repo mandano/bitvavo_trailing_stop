@@ -200,9 +200,7 @@ class Alert(object):
 
 
 class AlertHandler(object):
-    ticker_prices = list()
     alerts_file_name = 'alerts.json'
-
     alerts = list()
 
     def __init__(self, **kwargs):
@@ -233,13 +231,6 @@ class AlertHandler(object):
     @classmethod
     def get_decimal(cls, s):
         return Decimal(s)
-
-    def get_fetched_ticker_price(self, market: str):
-        for ticker_price in self.ticker_prices:
-            if ticker_price['market'] == market:
-                return ticker_price
-
-        return None
 
     @classmethod
     def send_email(cls, message: str):
