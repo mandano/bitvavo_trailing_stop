@@ -128,19 +128,21 @@ class Alert(object):
 
         # first time
         if self.status is None:
-            self.init_price = price
+            if self.init_price is None:
+                self.init_price = price
+                self.changedAttributes.append('init_price')
+
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
             self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.status = self.STATUS_ACTIVE
 
-            self.changedAttributes = [
-                'init_price',
+            self.changedAttributes.extend([
                 'trailing_price',
                 'price',
                 'dt',
                 'status'
-            ]
+            ])
 
             return True
 
