@@ -18,9 +18,15 @@ logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
 class BitvavoClient(Bitvavo):
+    SIDE_BUY = 'buy'
+    SIDE_SELL = 'sell'
+    ORDER_TYPE = 'market'
+
     _response_order = None
     _response_balance = None
     _response_ticker_price = None
+
+    market: str = None
 
     def __init__(self, **kwargs):
         super().__init__({
@@ -30,6 +36,9 @@ class BitvavoClient(Bitvavo):
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
+
+        if self.market is None:
+            exit(1)
 
     def get_balance(self, symbol):
         if self._response_balance is None:
@@ -42,14 +51,14 @@ class BitvavoClient(Bitvavo):
 
         return None
 
-    def get_ticker_price(self, market: str):
+    def get_ticker_price(self):
         if self._response_ticker_price is None:
-            self._response_ticker_price = self.tickerPrice({'market': market})
+            self._response_ticker_price = self.tickerPrice({'market': self.market})
 
             if 'price' not in self._response_ticker_price or 'market' not in self._response_ticker_price:
                 return None
 
-            if market != self._response_ticker_price['market']:
+            if self.market != self._response_ticker_price['market']:
                 return None
 
             self._response_ticker_price['price'] = Decimal(self._response_ticker_price['price'])
@@ -57,6 +66,18 @@ class BitvavoClient(Bitvavo):
             return self._response_ticker_price['price']
 
         return None
+
+    def place_order(self, side: str, order_type, amount: str):
+        self._response_order = self.placeOrder(
+            self.market,
+            side,
+            order_type,
+            {
+                'amount': amount,
+            }
+        )
+
+        return self._response_order
 
 
 class Alert(object):
@@ -105,7 +126,7 @@ class Alert(object):
         if self.market is None:
             return False
 
-        price = Decimal(self._client.get_ticker_price(self.market))
+        price = Decimal(self._client.get_ticker_price())
 
         # first time
         if self.status is None:
@@ -245,6 +266,9 @@ class AlertHandler(object):
         finally:
             server.quit()
 
+    def sell_asset(self):
+        pass
+
     def update_alerts(self):
         for idx, alert in enumerate(self.alerts):
             alert = Alert(
@@ -256,7 +280,9 @@ class AlertHandler(object):
                 status=alert['status'],
                 trailing_percentage=alert['trailing_percentage'],
                 trailing_price=alert['trailing_price'],
-                _client=BitvavoClient()
+                _client=BitvavoClient(
+                    market=alert['market']
+                )
             )
 
             alert.update_by_client()
@@ -266,6 +292,9 @@ class AlertHandler(object):
 
             if Alert.STATUS_HIT in alert.changedAttributes and Alert.ACTION_SEND_EMAIL in alert.actions:
                 self.send_email(json.dumps(alert, indent=4, sort_keys=True))
+
+            if Alert.STATUS_HIT in alert.changedAttributes and Alert.ACTION_SELL_ASSET in alert.actions:
+                self.sell_asset()
 
 
 if __name__ == '__main__':
