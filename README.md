@@ -1,1 +1,1 @@
-# bitvavo_trailing_stop
+# Bitvavo trailing alert
