@@ -17,17 +17,158 @@ load_dotenv('.env')
 logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
-class AlertHandler(object):
+class Alert(object):
     STATUS_HIT = 'hit'
     STATUS_ACTIVE = 'active'
     STATUS_NOT_INIT = None
 
-    ticker_prices = list()
-    alerts_file_name = 'alerts.json'
-    client = Bitvavo({
+    ACTION_SEND_EMAIL = 'send_email'
+    ACTION_SELL_ASSET = 'sell_asset'
+
+    _response_order = None
+    _response_balance = None
+    _response_ticker_price = None
+
+    changedAttributes = []
+
+    _client = Bitvavo({
         'APIKEY': os.environ.get('APIKEY'),
         'APISECRET': os.environ.get('APISECRET')
     })
+
+    actions = []
+    dt: str = None
+    init_price: Decimal = None
+    market: str = None
+    price: Decimal = None
+    status: str = None
+    trailing_percentage: Decimal = None
+    trailing_price: Decimal = None
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+    def get_balance(self, symbol):
+        self._response_balance = self._client.balance({'symbol': symbol})
+
+        if symbol not in self._response_balance or 'available' not in self._response_balance:
+            return None
+
+        return Decimal(self._response_balance['available'])
+
+    def attributes(self):
+        return {
+            'actions': self.actions,
+            'dt': self.dt,
+            'init_price': self.init_price,
+            'market': self.market,
+            'price': self.price,
+            'status': self.status,
+            'trailing_percentage':self.trailing_percentage,
+            'trailing_price':self.trailing_price
+        }
+
+    def set_response_ticker_price_by_client(self):
+        if self._response_ticker_price is None:
+            self._response_ticker_price = self._client.tickerPrice({'market': self.market})
+
+            if 'price' not in self._response_ticker_price or 'market' not in self._response_ticker_price:
+                return None
+
+            if self.market != self._response_ticker_price['market']:
+                return None
+
+            self._response_ticker_price['price'] = Decimal(self._response_ticker_price['price'])
+
+    def update_by_client(self):
+        self.changedAttributes = []
+
+        if self.status == self.STATUS_HIT:
+            return None
+
+        if self.market is None:
+            return False
+
+        self.set_response_ticker_price_by_client()
+
+        price = Decimal(self._response_ticker_price['price'])
+
+        # first time
+        if self.status is None:
+            self.init_price = price
+            self.trailing_price = price * Decimal(self.trailing_percentage)
+            self.price = price
+            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.status = self.STATUS_ACTIVE
+
+            self.changedAttributes = [
+                'init_price',
+                'trailing_price',
+                'price',
+                'dt',
+                'status'
+            ]
+
+            return True
+
+        # trailing price hit
+        if price <= self.trailing_price:
+            self.price = price
+            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.status = self.STATUS_HIT
+
+            self.changedAttributes = [
+                'price',
+                'dt',
+                'status'
+            ]
+
+            return True
+
+        # price increased and above init price
+        if price > self.price and price > self.init_price:
+            self.trailing_price = price * Decimal(self.trailing_percentage)
+            self.price = price
+            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            self.changedAttributes = [
+                'trailing_price'
+                'price',
+                'dt',
+            ]
+
+            return True
+
+        # price increased but below init price
+        if price > self.price:
+            self.price = price
+            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            self.changedAttributes = [
+                'price',
+                'dt',
+            ]
+
+            return True
+
+        # price decreased
+        if price <= self.price:
+            self.price = price
+            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            self.changedAttributes = [
+                'price',
+                'dt',
+            ]
+
+            return True
+
+
+class AlertHandler(object):
+    ticker_prices = list()
+    alerts_file_name = 'alerts.json'
+
     alerts = list()
 
     def __init__(self, **kwargs):
@@ -91,77 +232,31 @@ class AlertHandler(object):
         finally:
             server.quit()
 
-    def process_alerts(self):
+    def update_alerts(self):
         for idx, alert in enumerate(self.alerts):
-            self.process_alert(idx, alert)
+            alert = Alert(
+                actions=alert['actions'],
+                dt=alert['dt'],
+                init_price=alert['init_price'],
+                market=alert['market'],
+                price=alert['price'],
+                status=alert['status'],
+                trailing_percentage=alert['trailing_percentage'],
+                trailing_price=alert['trailing_price']
+            )
 
-    def process_alert(self, idx: int, alert: dict):
-        if alert['status'] == "hit":
-            return
+            alert.update_by_client()
 
-        ticker_price = self.get_fetched_ticker_price(alert['market'])
+            if alert.changedAttributes is not None:
+                self.alerts[idx] = alert.attributes()
 
-        if ticker_price is None:
-            ticker_price = self.client.tickerPrice({'market': alert['market']})
-
-            if 'price' not in ticker_price or 'market' not in ticker_price:
-                return
-
-            if alert['market'] != ticker_price['market']:
-                return
-
-            ticker_price['price'] = Decimal(ticker_price['price'])
-
-            self.ticker_prices.append(ticker_price)
-
-        price = Decimal(ticker_price['price'])
-
-        if alert['status'] == "hit":
-            return
-
-        # first time
-        if alert['status'] is None:
-            self.alerts[idx]['init_price'] = price
-            self.alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-            self.alerts[idx]['price'] = price
-            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.alerts[idx]['status'] = 'active'
-
-            return
-
-        # trailing price hit
-        if price <= alert['trailing_price']:
-            self.alerts[idx]['price'] = price
-            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.alerts[idx]['status'] = 'hit'
-
-            if 'send_email' in alert['actions']:
+            if Alert.STATUS_HIT in alert.changedAttributes and Alert.ACTION_SEND_EMAIL in alert.actions:
                 self.send_email(json.dumps(alert, indent=4, sort_keys=True))
-
-        # price increased and above init price
-        if price > alert['price'] and price > alert['init_price']:
-            self.alerts[idx]['trailing_price'] = price * Decimal(alert['trailing_percentage'])
-            self.alerts[idx]['price'] = price
-            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            return
-
-        # price increased but below init price
-        if price > alert['price']:
-            self.alerts[idx]['price'] = price
-            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            return
-
-        # price decreased
-        if price <= alert['price']:
-            self.alerts[idx]['price'] = price
-            self.alerts[idx]['datetime'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            return
 
 
 if __name__ == '__main__':
     ah = AlertHandler()
-    ah.process_alerts()
+    ah.update_alerts()
     ah.save_alerts()
+
+#asdf = ah.get_balance('ETH')
