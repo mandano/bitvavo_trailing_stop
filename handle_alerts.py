@@ -279,6 +279,8 @@ class CreateAlert(object):
         ah.alerts.append(alert.attributes())
         ah.save_alerts()
 
+        print('New alert created.')
+
     def choose_market(self):
         print('Choose market, like "ETH-EUR"')
         print(' [1] Type in your market string')
