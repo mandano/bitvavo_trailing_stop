@@ -4,22 +4,22 @@
             "send_email",
             "sell_asset"
         ],
-        "dt": "2021-03-20 11:09:31",
-        "init_price": 1575.4,
+        "dt": "2021-03-20 20:00:27",
+        "init_price": 1777,
         "market": "ETH-EUR",
-        "price": 1539.7,
+        "price": 1700.2,
         "status": "active",
         "trailing_percentage": 0.9,
-        "trailing_price": 1370.88
+        "trailing_price": 1600
     },
     {
         "actions": [
             "send_email"
         ],
-        "dt": "2021-03-20 11:09:48",
+        "dt": "2021-03-20 20:00:27",
         "init_price": 0.89378,
         "market": "ADA-EUR",
-        "price": 1.069,
+        "price": 1.0405,
         "status": "active",
         "trailing_percentage": 0.9,
         "trailing_price": 0.9621
@@ -35,5 +35,17 @@
         "status": "hit",
         "trailing_percentage": 0.99,
         "trailing_price": 0.8801298
+    },
+    {
+        "actions": [
+            "send_email"
+        ],
+        "dt": "2021-03-21 16:02:12",
+        "init_price": 1500,
+        "market": "ETH-EUR",
+        "price": 1505.8,
+        "status": "active",
+        "trailing_percentage": 0.8,
+        "trailing_price": 1204.64
     }
 ]
