@@ -15,6 +15,7 @@ def test_load_alerts_from_file(tmp_path):
     market = 'ETH-EUR'
 
     alert_0 = {
+        "amount": fake.pydecimal(min_value=2, max_value=100),
         "actions": [
             "send_email",
             "sell_asset"
@@ -29,6 +30,7 @@ def test_load_alerts_from_file(tmp_path):
     }
 
     alert_1 = {
+        "amount": fake.pydecimal(min_value=2, max_value=100),
         "actions": [
             "send_email",
             "sell_asset"
@@ -47,6 +49,7 @@ def test_load_alerts_from_file(tmp_path):
 
     ah = AlertHandler(alerts_file_name=p)
 
+    assert ah.alerts[0]['amount'] == alert_0['amount']
     assert ah.alerts[0]['actions'] == alert_0['actions']
     assert ah.alerts[0]['init_price'] == alert_0['init_price']
     assert ah.alerts[0]['market'] == market
@@ -55,6 +58,7 @@ def test_load_alerts_from_file(tmp_path):
     assert ah.alerts[0]['trailing_percentage'] == alert_0['trailing_percentage']
     assert ah.alerts[0]['trailing_price'] == alert_0['trailing_price']
 
+    assert ah.alerts[1]['amount'] == alert_1['amount']
     assert ah.alerts[1]['actions'] == alert_1['actions']
     assert ah.alerts[1]['init_price'] == alert_1['init_price']
     assert ah.alerts[1]['market'] == market
@@ -74,6 +78,7 @@ def test_save_alerts_from_file(tmp_path):
     market = 'ETH-EUR'
 
     alert_0 = {
+        "amount": fake.pydecimal(min_value=2, max_value=100),
         "actions": [
             "send_email",
             "sell_asset"
@@ -88,6 +93,7 @@ def test_save_alerts_from_file(tmp_path):
     }
 
     alert_1 = {
+        "amount": fake.pydecimal(min_value=2, max_value=100),
         "actions": [
             "send_email",
             "sell_asset"
@@ -111,6 +117,7 @@ def test_save_alerts_from_file(tmp_path):
     with open(p, 'r') as fp:
         alerts = json.load(fp, parse_float=AlertHandler.get_decimal)
 
+    assert alerts[0]['amount'] == alert_0['amount']
     assert alerts[0]['actions'] == alert_0['actions']
     assert alerts[0]['init_price'] == alert_0['init_price']
     assert alerts[0]['market'] == market
@@ -119,6 +126,7 @@ def test_save_alerts_from_file(tmp_path):
     assert alerts[0]['trailing_percentage'] == alert_0['trailing_percentage']
     assert alerts[0]['trailing_price'] == alert_0['trailing_price']
 
+    assert alerts[1]['amount'] == alert_1['amount']
     assert alerts[1]['actions'] == alert_1['actions']
     assert alerts[1]['init_price'] == alert_1['init_price']
     assert alerts[1]['market'] == market
