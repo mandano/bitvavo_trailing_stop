@@ -25,6 +25,7 @@ class BitvavoClient(Bitvavo):
     _response_order = None
     _response_balance = None
     _response_ticker_price = None
+    _response_markets = None
 
     market: str = None
 
@@ -36,11 +37,6 @@ class BitvavoClient(Bitvavo):
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
-
-        if self.market is None:
-            logging.error('bitvavo: Market attribute not set.')
-
-            exit(1)
 
     def get_balance(self, symbol):
         if self._response_balance is None:
@@ -56,6 +52,11 @@ class BitvavoClient(Bitvavo):
         return None
 
     def get_ticker_price(self):
+        if self.market is None:
+            logging.error('bitvavo: Market attribute not set.')
+
+            exit(1)
+
         if self._response_ticker_price is None:
             self._response_ticker_price = self.tickerPrice({'market': self.market})
 
@@ -66,7 +67,7 @@ class BitvavoClient(Bitvavo):
 
             if self.market != self._response_ticker_price['market']:
                 logging.error('bitvavo:get_ticker_price: Market in response not equal class attribute.')
-                
+
                 return None
 
             return Decimal(self._response_ticker_price['price'])
@@ -84,6 +85,14 @@ class BitvavoClient(Bitvavo):
         )
 
         return self._response_order
+
+    def get_markets(self, market: str = None):
+        if market is not None:
+            self._response_markets = self.markets({'market': market})
+        else:
+            self._response_markets = self.markets({})
+
+        return self._response_markets
 
 
 class Alert(object):
@@ -128,8 +137,8 @@ class Alert(object):
             'market': self.market,
             'price': self.price,
             'status': self.status,
-            'trailing_percentage':self.trailing_percentage,
-            'trailing_price':self.trailing_price
+            'trailing_percentage': self.trailing_percentage,
+            'trailing_price': self.trailing_price
         }
 
     def update_by_client(self):
@@ -214,6 +223,100 @@ class Alert(object):
             ]
 
             return True
+
+
+class CreateAlert(object):
+    _client: BitvavoClient = None
+
+    market = None
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+    def add_by_console(self):
+        print('Input new alert data:')
+        print('---------------------')
+
+        market =  self.choose_market()
+
+        alert = Alert(_client=BitvavoClient(market=market))
+        alert.market = market
+
+        print('Add new init price:')
+        print(' [1] Use manual value')
+        print(' [2] Set by market')
+
+        init_price_type = input()
+
+        if init_price_type == '1':
+            print('Type in your value for init price as string like "2345.43"')
+            alert.init_price = Decimal(input())
+
+        print('Insert trail in percentage like ["0.9", "0.45"]')
+        alert.trailing_percentage = Decimal(input())
+
+        print('Which actions should be activated?')
+        print('[1] Send e-mail')
+        print('[2] Sell')
+        print('[3] Send e-mail and sell')
+
+        actions_selection = input()
+
+        if actions_selection == '1':
+            alert.actions.append(Alert.ACTION_SEND_EMAIL)
+        if actions_selection == '2':
+            alert.actions.append(Alert.ACTION_SELL_ASSET)
+        elif actions_selection == '3':
+            alert.actions.extend([
+                Alert.ACTION_SEND_EMAIL,
+                Alert.ACTION_SELL_ASSET
+            ])
+
+        alert.update_by_client()
+
+        ah = AlertHandler()
+        ah.load_alerts()
+        ah.alerts.append(alert.attributes())
+        ah.save_alerts()
+
+    def choose_market(self):
+        print('Choose market, like "ETH-EUR"')
+        print(' [1] Type in your market string')
+        print(' [2] List supported markets')
+
+        market_selection_type = input()
+
+        if market_selection_type == '1':
+            print('Type in your market string')
+            market = input()
+        elif market_selection_type == '2':
+            markets = self._client.get_markets()
+
+            print('Supported markets:')
+            print(json.dumps(markets, indent=4, sort_keys=True))
+
+            market = self.choose_market()
+        else:
+            print('Input not recognized.')
+            exit(1)
+
+        if not self.is_market_supported(market):
+            print('Market string not supported.')
+            exit(1)
+
+        return market
+
+    def is_market_supported(self, market):
+        remote_market = self._client.get_markets(market)
+
+        if \
+                'market' in remote_market and \
+                market == remote_market['market'] and \
+                'trading' == remote_market['status']:
+            return True
+
+        return False
 
 
 class AlertHandler(object):
