@@ -115,9 +115,7 @@ class Alert(object):
     status: str = None
     trailing_percentage: Decimal = None
     trailing_price: Decimal = None
-    sell = {
-        'amount': None
-    }
+    amount: Decimal = None
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -131,6 +129,7 @@ class Alert(object):
 
     def attributes(self):
         return {
+            'amount': self.amount,
             'actions': self.actions,
             'dt': self.dt,
             'init_price': self.init_price,
