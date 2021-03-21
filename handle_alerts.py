@@ -428,8 +428,10 @@ class Trade(object):
         if symbol is None:
             return False
 
-        if self._alert.sell['amount'] is None:
+        if self._alert.amount is None:
             amount = self._client.get_balance(symbol)
+        else:
+            amount = self._alert.amount
 
         try:
             amount
