@@ -408,10 +408,9 @@ class Messages(object):
                 os.environ.get('RECEIVER_EMAIL'),
                 message
             )
+            server.quit()
         except Exception as e:
             logging.error(e)
-        finally:
-            server.quit()
 
 
 class Trade(object):
