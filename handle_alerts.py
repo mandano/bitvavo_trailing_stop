@@ -388,6 +388,9 @@ class AlertHandler(object):
 
 
 class Messages(object):
+    E_MAIL_SUBJECT: str = 'Trailing stop hit.'
+    FROM: str = 'Bitvavo Trailing Alert'
+
     @classmethod
     def send_email(cls, message: str):
         smtp_server = os.environ.get('SMTP_SERVER_URI')
@@ -396,8 +399,8 @@ class Messages(object):
         email_user_pw = os.environ.get('EMAIL_USER_PW')
 
         msg = MIMEText(message, 'text')
-        msg['Subject'] = 'Trailing stop hit.'
-        msg['From'] = os.environ.get('SENDER_EMAIL')
+        msg['Subject'] = cls.E_MAIL_SUBJECT
+        msg['From'] = cls.FROM
         msg['To'] = os.environ.get('RECEIVER_EMAIL')
 
         try:
