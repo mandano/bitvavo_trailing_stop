@@ -333,25 +333,18 @@ class AlertHandler(object):
             self.load_alerts()
 
     def load_alerts(self):
+        alerts = list()
+
         try:
             with open(self.alerts_file_name, 'r') as fp:
-                self.alerts = json.load(fp, parse_float=self.get_decimal)
+                alerts = json.load(fp, parse_float=self.get_decimal)
         except FileNotFoundError:
             logging.info('No alert file.')
 
-        if not self.alerts:
+        if not alerts:
             logging.warning("No alerts set.")
 
-    def save_alerts(self):
-        with open(self.alerts_file_name, 'w') as fp:
-            json.dump(self.alerts, fp, indent=4, sort_keys=True)
-
-    @classmethod
-    def get_decimal(cls, s):
-        return Decimal(s)
-
-    def update_alerts(self):
-        for idx, alert in enumerate(self.alerts):
+        for idx, alert in enumerate(alerts):
             alert = Alert(
                 actions=alert['actions'],
                 dt=alert['dt'],
@@ -366,12 +359,27 @@ class AlertHandler(object):
                 )
             )
 
+            self.alerts.append(alert.attributes())
+
+    def save_alerts(self):
+        alerts = list()
+
+        for idx, alert in enumerate(self.alerts):
+            alerts.append(alert.attributes())
+
+        with open(self.alerts_file_name, 'w') as fp:
+            json.dump(alerts, fp, indent=4, sort_keys=True)
+
+    @classmethod
+    def get_decimal(cls, s):
+        return Decimal(s)
+
+    def update_alerts(self):
+        for idx, alert in enumerate(self.alerts):
             alert.update_by_client()
 
             if not alert.changedAttributes:
                 continue
-
-            self.alerts[idx] = alert.attributes()
 
             if alert.STATUS_HIT != alert.status:
                 continue
