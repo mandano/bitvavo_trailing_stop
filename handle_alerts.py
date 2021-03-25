@@ -1,7 +1,8 @@
 import datetime
 import smtplib
-import ssl
 import logging
+from email.mime.text import MIMEText
+
 import simplejson as json
 import os
 from decimal import Decimal
@@ -394,20 +395,23 @@ class Messages(object):
         email_user = os.environ.get('EMAIL_USER')
         email_user_pw = os.environ.get('EMAIL_USER_PW')
 
-        context = ssl.create_default_context()
+        msg = MIMEText(message, 'text')
+        msg['Subject'] = 'Trailing stop hit.'
+        msg['From'] = os.environ.get('SENDER_EMAIL')
+        msg['To'] = os.environ.get('RECEIVER_EMAIL')
 
         try:
-            server = smtplib.SMTP(smtp_server, port)
-            server.ehlo()  # Can be omitted
-            server.starttls(context=context)  # Secure the connection
-            server.ehlo()  # Can be omitted
+            server = smtplib.SMTP_SSL(smtp_server, port)
+            logging.info('Created smtp socket.')
+            server.ehlo()
             server.login(email_user, email_user_pw)
-
-            server.sendmail(
-                os.environ.get('SENDER_EMAIL'),
-                os.environ.get('RECEIVER_EMAIL'),
-                message
+            logging.info('Logged into smtp server.')
+            server.send_message(
+                msg,
+                from_addr=os.environ.get('SENDER_EMAIL'),
+                to_addrs=os.environ.get('RECEIVER_EMAIL'),
             )
+            logging.info('E-mail sent.')
             server.quit()
         except Exception as e:
             logging.error(e)
