@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 import simplejson as json
 from faker import Faker
-from handle_alerts import AlertHandler, Alert
+from handle_alerts import AlertHandler, Alert, BitvavoClient
 
 file_name = "alerts.json"
 
@@ -10,62 +12,25 @@ def test_load_alerts_from_file(tmp_path):
     d.mkdir()
     p = d / file_name
 
-    fake = Faker()
-
     market = 'ETH-EUR'
 
-    alert_0 = {
-        "amount": fake.pydecimal(min_value=2, max_value=100),
-        "actions": [
-            "send_email",
-            "sell_asset"
-        ],
-        "dt": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
-        "init_price": fake.pydecimal(min_value=200),
-        "market": market,
-        "price": fake.pydecimal(min_value=0),
-        "status": Alert.STATUS_ACTIVE,
-        "trailing_percentage": fake.pydecimal(min_value=0, max_value=1),
-        "trailing_price": fake.pydecimal(min_value=0)
-    }
-
-    alert_1 = {
-        "amount": fake.pydecimal(min_value=2, max_value=100),
-        "actions": [
-            "send_email",
-            "sell_asset"
-        ],
-        "dt": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
-        "init_price": fake.pydecimal(min_value=200),
-        "market": market,
-        "price": fake.pydecimal(min_value=0),
-        "status": Alert.STATUS_ACTIVE,
-        "trailing_percentage": fake.pydecimal(min_value=0, max_value=1),
-        "trailing_price": fake.pydecimal(min_value=0)
-    }
+    alert_0 = get_alert(status=Alert.STATUS_ACTIVE).attributes()
+    alert_1 = get_alert(status=Alert.STATUS_ACTIVE).attributes()
 
     with open(p, 'w') as fp:
-        json.dump([alert_0, alert_1], fp, indent=4, sort_keys=True)
+        json.dump([
+            alert_0,
+            alert_1
+        ],
+            fp,
+            indent=4,
+            sort_keys=True
+        )
 
     ah = AlertHandler(alerts_file_name=p)
 
-    assert ah.alerts[0]['amount'] == alert_0['amount']
-    assert ah.alerts[0]['actions'] == alert_0['actions']
-    assert ah.alerts[0]['init_price'] == alert_0['init_price']
-    assert ah.alerts[0]['market'] == market
-    assert ah.alerts[0]['price'] == alert_0['price']
-    assert ah.alerts[0]['status'] == alert_0['status']
-    assert ah.alerts[0]['trailing_percentage'] == alert_0['trailing_percentage']
-    assert ah.alerts[0]['trailing_price'] == alert_0['trailing_price']
-
-    assert ah.alerts[1]['amount'] == alert_1['amount']
-    assert ah.alerts[1]['actions'] == alert_1['actions']
-    assert ah.alerts[1]['init_price'] == alert_1['init_price']
-    assert ah.alerts[1]['market'] == market
-    assert ah.alerts[1]['price'] == alert_1['price']
-    assert ah.alerts[1]['status'] == alert_1['status']
-    assert ah.alerts[1]['trailing_percentage'] == alert_1['trailing_percentage']
-    assert ah.alerts[1]['trailing_price'] == alert_1['trailing_price']
+    assert ah.alerts[0] == alert_0
+    assert ah.alerts[1] == alert_1
 
 
 def test_save_alerts_from_file(tmp_path):
@@ -73,39 +38,8 @@ def test_save_alerts_from_file(tmp_path):
     d.mkdir()
     p = d / file_name
 
-    fake = Faker()
-
-    market = 'ETH-EUR'
-
-    alert_0 = {
-        "amount": fake.pydecimal(min_value=2, max_value=100),
-        "actions": [
-            "send_email",
-            "sell_asset"
-        ],
-        "datetime": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
-        "init_price": fake.pydecimal(min_value=200),
-        "market": market,
-        "price": fake.pydecimal(min_value=0),
-        "status": Alert.STATUS_ACTIVE,
-        "trailing_percentage": fake.pydecimal(min_value=0, max_value=1),
-        "trailing_price": fake.pydecimal(min_value=0)
-    }
-
-    alert_1 = {
-        "amount": fake.pydecimal(min_value=2, max_value=100),
-        "actions": [
-            "send_email",
-            "sell_asset"
-        ],
-        "datetime": fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
-        "init_price": fake.pydecimal(min_value=200),
-        "market": market,
-        "price": fake.pydecimal(min_value=0),
-        "status": Alert.STATUS_ACTIVE,
-        "trailing_percentage": fake.pydecimal(min_value=0, max_value=1),
-        "trailing_price": fake.pydecimal(min_value=0)
-    }
+    alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
+    alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
 
     ah = AlertHandler(alerts_file_name=p, alerts=[
         alert_0,
@@ -117,23 +51,53 @@ def test_save_alerts_from_file(tmp_path):
     with open(p, 'r') as fp:
         alerts = json.load(fp, parse_float=AlertHandler.get_decimal)
 
-    assert alerts[0]['amount'] == alert_0['amount']
-    assert alerts[0]['actions'] == alert_0['actions']
-    assert alerts[0]['init_price'] == alert_0['init_price']
-    assert alerts[0]['market'] == market
-    assert alerts[0]['price'] == alert_0['price']
-    assert alerts[0]['status'] == alert_0['status']
-    assert alerts[0]['trailing_percentage'] == alert_0['trailing_percentage']
-    assert alerts[0]['trailing_price'] == alert_0['trailing_price']
-
-    assert alerts[1]['amount'] == alert_1['amount']
-    assert alerts[1]['actions'] == alert_1['actions']
-    assert alerts[1]['init_price'] == alert_1['init_price']
-    assert alerts[1]['market'] == market
-    assert alerts[1]['price'] == alert_1['price']
-    assert alerts[1]['status'] == alert_1['status']
-    assert alerts[1]['trailing_percentage'] == alert_1['trailing_percentage']
-    assert alerts[1]['trailing_price'] == alert_1['trailing_price']
+    assert ah.alerts[0] == alert_0
+    assert ah.alerts[1] == alert_1
 
 
+def get_alert(**kwargs):
+    status = kwargs.get("status")
+    client_response_ticker_price_scenario = kwargs.get("client_response_ticker_price_scenario")
+    client_response_ticker_price = None
+
+    fake = Faker()
+
+    market='ETH-EUR'
+    trailing_price = fake.pydecimal(min_value=100)
+    trailing_percentage = Decimal('0.' + str(fake.pyint(min_value=70, max_value=97)))
+    init_price = trailing_price / trailing_percentage + fake.pydecimal(min_value=100, max_value=200)
+
+    if status == Alert.STATUS_ACTIVE:
+        price = trailing_price / trailing_percentage + fake.pydecimal(min_value=100, max_value=200)
+    elif status == Alert.STATUS_HIT:
+        price = trailing_price / trailing_percentage
+    else:
+        return None
+
+    if client_response_ticker_price_scenario is not None:
+        if client_response_ticker_price_scenario == 'hit':
+            client_response_ticker_price = trailing_price - fake.pydecimal(min_value=30, max_value=80)
+        elif client_response_ticker_price_scenario == 'increased':
+            client_response_ticker_price = price + fake.pydecimal(min_value=30, max_value=80)
+        elif client_response_ticker_price_scenario == 'decreased':
+            client_response_ticker_price = fake.pydecimal(min_value=int(trailing_price+1), max_value=int(price-1))
+
+    return Alert(
+        amount=None,
+        actions=[],
+        dt=fake.date_time_this_month().strftime("%Y-%m-%d %H:%M:%S"),
+        init_price=init_price,
+        market=market,
+        price=price,
+        status=status,
+        trailing_percentage=trailing_percentage,
+        trailing_price=trailing_price,
+        _client=BitvavoClient(
+            market=market,
+            _response_ticker_price={
+                "market": market,
+                "price": client_response_ticker_price
+            }
+        )
+    )
 
