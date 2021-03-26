@@ -3,6 +3,7 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 
+import simplejson
 import simplejson as json
 import os
 from decimal import Decimal
@@ -227,6 +228,8 @@ class Alert(object):
 
 class CreateAlert(object):
     _client: BitvavoClient = None
+    file_name = 'new_alert.json'
+    alert = None
 
     market = None
 
@@ -234,14 +237,23 @@ class CreateAlert(object):
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
+    def save_alert(self):
+        with open(self.file_name, 'w') as fp:
+            json.dump(self.alert.attributes(), fp, indent=4, sort_keys=True)
+
     def add_by_console(self):
+        if os.path.isfile(self.file_name):
+            print("Pending new alert, try again please (Updating process probably didn't yet pick up new alert).")
+
+            exit(1)
+
         print('Input new alert data:')
         print('---------------------')
 
-        market =  self.choose_market()
+        market = self.choose_market()
 
-        alert = Alert(_client=BitvavoClient(market=market))
-        alert.market = market
+        self.alert = Alert(_client=BitvavoClient(market=market))
+        self.alert.market = market
 
         print('Add new init price:')
         print(' [1] Use manual value')
@@ -251,10 +263,10 @@ class CreateAlert(object):
 
         if init_price_type == '1':
             print('Type in your value for init price as string like "2345.43"')
-            alert.init_price = Decimal(input())
+            self.alert.init_price = Decimal(input())
 
         print('Insert trail in percentage like ["0.9", "0.45"]')
-        alert.trailing_percentage = Decimal(input())
+        self.alert.trailing_percentage = Decimal(input())
 
         print('Which actions should be activated?')
         print('[1] Send e-mail')
@@ -264,23 +276,20 @@ class CreateAlert(object):
         actions_selection = input()
 
         if actions_selection == '1':
-            alert.actions.append(Alert.ACTION_SEND_EMAIL)
+            self.alert.actions.append(Alert.ACTION_SEND_EMAIL)
         if actions_selection == '2':
-            alert.actions.append(Alert.ACTION_SELL_ASSET)
+            self.alert.actions.append(Alert.ACTION_SELL_ASSET)
         elif actions_selection == '3':
-            alert.actions.extend([
+            self.alert.actions.extend([
                 Alert.ACTION_SEND_EMAIL,
                 Alert.ACTION_SELL_ASSET
             ])
 
-        alert.update_by_client()
-
-        ah = AlertHandler()
-        ah.load_alerts()
-        ah.alerts.append(alert.attributes())
-        ah.save_alerts()
+        self.alert.update_by_client()
+        self.save_alert()
 
         print('New alert created.')
+        print(self.alert.attributes())
 
     def choose_market(self):
         print('Choose market, like "ETH-EUR"')
@@ -323,6 +332,7 @@ class CreateAlert(object):
 
 class AlertHandler(object):
     alerts_file_name = 'alerts.json'
+    new_alert_file_name = 'new_alert.json'
     alerts = list()
 
     def __init__(self, **kwargs):
@@ -338,8 +348,16 @@ class AlertHandler(object):
         try:
             with open(self.alerts_file_name, 'r') as fp:
                 alerts = json.load(fp, parse_float=self.get_decimal)
+
+            if os.path.isfile(self.new_alert_file_name):
+                with open(self.new_alert_file_name, 'r') as fp:
+                    alerts.append(json.load(fp, parse_float=self.get_decimal))
+
+                os.remove(self.new_alert_file_name)
         except FileNotFoundError:
             logging.info('No alert file.')
+        except simplejson.errors.JSONDecodeError as e:
+            logging.info(e)
 
         if not alerts:
             logging.warning("No alerts set.")
@@ -359,7 +377,7 @@ class AlertHandler(object):
                 )
             )
 
-            self.alerts.append(alert.attributes())
+            self.alerts.append(alert)
 
     def save_alerts(self):
         alerts = list()
