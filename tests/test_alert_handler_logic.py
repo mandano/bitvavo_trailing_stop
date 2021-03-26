@@ -19,9 +19,9 @@ def test_load_alerts_from_file(tmp_path):
 
     with open(p, 'w') as fp:
         json.dump([
-            alert_0,
-            alert_1
-        ],
+                alert_0,
+                alert_1
+            ],
             fp,
             indent=4,
             sort_keys=True
@@ -29,8 +29,8 @@ def test_load_alerts_from_file(tmp_path):
 
     ah = AlertHandler(alerts_file_name=p)
 
-    assert ah.alerts[0] == alert_0
-    assert ah.alerts[1] == alert_1
+    assert ah.alerts[0].attributes() == alert_0
+    assert ah.alerts[1].attributes() == alert_1
 
 
 def test_save_alerts_from_file(tmp_path):
