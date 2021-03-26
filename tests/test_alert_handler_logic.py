@@ -101,3 +101,28 @@ def get_alert(**kwargs):
         )
     )
 
+
+def test_update_alerts(tmp_path):
+    d = tmp_path / "sub"
+    d.mkdir()
+    p = d / file_name
+
+    ah = AlertHandler(
+        alerts_file_name=p,
+        alerts=[
+            get_alert(status=Alert.STATUS_ACTIVE, client_response_ticker_price_scenario='hit'),
+            get_alert(status=Alert.STATUS_ACTIVE, client_response_ticker_price_scenario='increased'),
+            get_alert(status=Alert.STATUS_ACTIVE, client_response_ticker_price_scenario='decreased')
+        ],
+
+    )
+
+    ah.update_alerts()
+
+    assert ah.alerts[0].status == Alert.STATUS_HIT
+
+    assert ah.alerts[1].status == Alert.STATUS_ACTIVE
+    assert ah.alerts[1].price == ah.alerts[1]._client._response_ticker_price['price']
+
+    assert ah.alerts[2].status == Alert.STATUS_ACTIVE
+    assert ah.alerts[2].price == ah.alerts[2]._client._response_ticker_price['price']
