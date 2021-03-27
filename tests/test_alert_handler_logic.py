@@ -1,5 +1,5 @@
+import datetime
 from decimal import Decimal
-from random import randint
 
 import simplejson as json
 from faker import Faker
@@ -81,9 +81,7 @@ def get_alert(**kwargs):
         elif client_response_ticker_price_scenario == 'decreased':
             client_response_ticker_price = fake.pydecimal(min_value=int(trailing_price+1), max_value=int(price-1))
 
-    dt = fake.date_time(),
-
-    dt = dt[0]
+    dt = fake.date_time()
 
     return Alert(
         amount=None,
