@@ -11,12 +11,11 @@ file_name = "alerts.json"
 def test_load_alerts_from_file(tmp_path):
     d = tmp_path / "sub"
     d.mkdir()
-    p = d / file_name
 
     alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
     alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
 
-    with open(p, 'w') as fp:
+    with open(str(d) + '/' + file_name, 'w') as fp:
         json.dump([
                 alert_0.attributes(),
                 alert_1.attributes()
@@ -27,7 +26,7 @@ def test_load_alerts_from_file(tmp_path):
             default=str
         )
 
-    ah = AlertHandler(alerts_file_name=p)
+    ah = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
 
     assert ah.alerts[0].attributes() == alert_0.attributes()
     assert ah.alerts[1].attributes() == alert_1.attributes()
@@ -36,19 +35,22 @@ def test_load_alerts_from_file(tmp_path):
 def test_save_alerts_from_file(tmp_path):
     d = tmp_path / "sub"
     d.mkdir()
-    p = d / file_name
 
     alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
     alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
 
-    ah_save = AlertHandler(alerts_file_name=p, alerts=[
-        alert_0,
-        alert_1
-    ])
+    ah_save = AlertHandler(
+        alerts_file_path=str(d) + '/',
+        alerts_file_name=file_name,
+        alerts=[
+            alert_0,
+            alert_1
+        ]
+    )
 
     ah_save.save_alerts()
 
-    ah_load = AlertHandler(alerts_file_name=p)
+    ah_load = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
 
     assert ah_load.alerts[0].attributes() == alert_0.attributes()
     assert ah_load.alerts[1].attributes() == alert_1.attributes()
