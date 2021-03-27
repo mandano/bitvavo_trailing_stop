@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv('.env')
 
-project_folder = os.environ.get("PROJECT_FOLDER")
+project_path = os.environ.get("PROJECT_PATH")
 logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
@@ -241,7 +241,7 @@ class CreateAlert(object):
     market = None
 
     def __init__(self, **kwargs):
-        self.alerts_file_path = project_folder
+        self.alerts_file_path = project_path
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -346,7 +346,7 @@ class AlertHandler(object):
     alerts = list()
 
     def __init__(self, **kwargs):
-        self.alerts_file_path = project_folder
+        self.alerts_file_path = project_path
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
