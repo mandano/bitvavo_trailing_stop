@@ -10,11 +10,13 @@ import os
 from decimal import Decimal
 
 from python_bitvavo_api.bitvavo import Bitvavo
+
+from os.path import join, dirname
 from dotenv import load_dotenv
 
+dotenv_path = join(dirname(__file__), '/.env')
 load_dotenv('.env')
 
-project_path = os.environ.get("PROJECT_PATH")
 logging.basicConfig(level=os.environ.get("LOGGING_LEVEL"))
 
 
@@ -234,14 +236,14 @@ class Alert(object):
 class CreateAlert(object):
     _client: BitvavoClient = None
     file_name = 'new_alert.json'
-    alerts_file_path = None
+    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
 
     alert = None
 
     market = None
 
     def __init__(self, **kwargs):
-        self.alerts_file_path = project_path
+        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -342,11 +344,11 @@ class CreateAlert(object):
 class AlertHandler(object):
     alerts_file_name = 'alerts.json'
     new_alert_file_name = 'new_alert.json'
-    alerts_file_path = None
+    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
     alerts = list()
 
     def __init__(self, **kwargs):
-        self.alerts_file_path = project_path
+        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
