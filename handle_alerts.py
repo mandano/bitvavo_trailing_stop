@@ -245,7 +245,7 @@ class CreateAlert(object):
 
     def save_alert(self):
         with open(self.file_name, 'w') as fp:
-            json.dump(self.alert.attributes(), fp, indent=4, sort_keys=True)
+            json.dump(self.alert.attributes(), fp, indent=4, sort_keys=True, default=str)
 
     def add_by_console(self):
         if os.path.isfile(self.file_name):
@@ -352,18 +352,24 @@ class AlertHandler(object):
         alerts = list()
 
         try:
+            if not os.path.isfile(self.alerts_file_name):
+                Path(self.alerts_file_name).touch()
+
             with open(self.alerts_file_name, 'r') as fp:
-                alerts = json.load(fp, parse_float=self.get_decimal)
-
-            if os.path.isfile(self.new_alert_file_name):
-                with open(self.new_alert_file_name, 'r') as fp:
-                    alerts.append(json.load(fp, parse_float=self.get_decimal))
-
-                os.remove(self.new_alert_file_name)
+                alerts = json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal)
         except FileNotFoundError:
             logging.info('No alert file.')
         except simplejson.errors.JSONDecodeError as e:
             logging.info(e)
+
+        if os.path.isfile(self.new_alert_file_name):
+            try:
+                with open(self.new_alert_file_name, 'r') as fp:
+                    alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
+
+                os.remove(self.new_alert_file_name)
+            except simplejson.errors.JSONDecodeError as e:
+                logging.info(e)
 
         if not alerts:
             logging.warning("No alerts set.")
