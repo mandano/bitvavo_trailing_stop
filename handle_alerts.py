@@ -236,6 +236,8 @@ class Alert(object):
 class CreateAlert(object):
     _client: BitvavoClient = None
     file_name = 'new_alert.json'
+    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+
     alert = None
 
     market = None
@@ -245,7 +247,7 @@ class CreateAlert(object):
             self.__setattr__(k, v)
 
     def save_alert(self):
-        with open(self.file_name, 'w') as fp:
+        with open(self.alerts_file_path + self.file_name, 'w') as fp:
             json.dump(self.alert.attributes(), fp, indent=4, sort_keys=True, default=str)
 
     def add_by_console(self):
@@ -340,6 +342,7 @@ class CreateAlert(object):
 class AlertHandler(object):
     alerts_file_name = 'alerts.json'
     new_alert_file_name = 'new_alert.json'
+    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
     alerts = list()
 
     def __init__(self, **kwargs):
@@ -353,22 +356,22 @@ class AlertHandler(object):
         alerts = list()
 
         try:
-            if not os.path.isfile(self.alerts_file_name):
+            if not os.path.isfile(self.alerts_file_path + self.alerts_file_name):
                 Path(self.alerts_file_name).touch()
 
-            with open(self.alerts_file_name, 'r') as fp:
+            with open(self.alerts_file_path + self.alerts_file_name, 'r') as fp:
                 alerts = json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal)
         except FileNotFoundError:
             logging.info('No alert file.')
         except simplejson.errors.JSONDecodeError as e:
             logging.info(e)
 
-        if os.path.isfile(self.new_alert_file_name):
+        if os.path.isfile(self.alerts_file_path + self.new_alert_file_name):
             try:
-                with open(self.new_alert_file_name, 'r') as fp:
+                with open(self.alerts_file_path + self.new_alert_file_name, 'r') as fp:
                     alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
 
-                os.remove(self.new_alert_file_name)
+                os.remove(self.alerts_file_path + self.new_alert_file_name)
             except simplejson.errors.JSONDecodeError as e:
                 logging.info(e)
 
@@ -399,7 +402,7 @@ class AlertHandler(object):
         for idx, alert in enumerate(self.alerts):
             alerts.append(alert.attributes())
 
-        with open(self.alerts_file_name, 'w') as fp:
+        with open(self.alerts_file_path + self.alerts_file_name, 'w') as fp:
             json.dump(alerts, fp, indent=4, sort_keys=True, default=str)
 
     @classmethod
