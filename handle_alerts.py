@@ -2,6 +2,7 @@ import datetime
 import smtplib
 import logging
 from email.mime.text import MIMEText
+from pathlib import Path
 
 import simplejson
 import simplejson as json
@@ -377,8 +378,8 @@ class AlertHandler(object):
         for idx, alert in enumerate(alerts):
             alert = Alert(
                 actions=alert['actions'],
-                dt=datetime.datetime.strptime(alert['dt'], "%Y-%m-%d %H:%M:%S"),
-                init_dt=datetime.datetime.strptime(alert['init_dt'], "%Y-%m-%d %H:%M:%S"),
+                dt=datetime.datetime.strptime(alert['dt'], "%Y-%m-%d %H:%M:%S.%f"),
+                init_dt=datetime.datetime.strptime(alert['init_dt'], "%Y-%m-%d %H:%M:%S.%f"),
                 init_price=alert['init_price'],
                 market=alert['market'],
                 price=alert['price'],
