@@ -346,6 +346,7 @@ class AlertHandler(object):
     new_alert_file_name = 'new_alert.json'
     alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
     alerts = list()
+    _ticker_prices = {}
 
     def __init__(self, **kwargs):
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
@@ -383,6 +384,14 @@ class AlertHandler(object):
             logging.warning("No alerts set.")
 
         for idx, alert in enumerate(alerts):
+            response_ticker_price = None
+
+            if alert['market'] in self._ticker_prices:
+                response_ticker_price = {
+                    'price': self._ticker_prices[alert['market']],
+                    'market': alert['market']
+                }
+
             alert = Alert(
                 actions=alert['actions'],
                 dt=datetime.datetime.strptime(alert['dt'], "%Y-%m-%d %H:%M:%S.%f"),
@@ -394,10 +403,12 @@ class AlertHandler(object):
                 trailing_percentage=alert['trailing_percentage'],
                 trailing_price=alert['trailing_price'],
                 _client=BitvavoClient(
-                    market=alert['market']
+                    market=alert['market'],
+                    _response_ticker_price=response_ticker_price
                 )
             )
 
+            self._ticker_prices[alert.market] = alert.price
             self.alerts.append(alert)
 
     def save_alerts(self):
