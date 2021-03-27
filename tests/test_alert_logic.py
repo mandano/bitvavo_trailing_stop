@@ -28,7 +28,7 @@ def test_populate_new_alert_init_price_set():
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=init_price,
@@ -65,7 +65,7 @@ def test_populate_new_alert_init_price_not_set():
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=init_price,
@@ -104,7 +104,7 @@ def test_trailing_price_hit():
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
@@ -143,7 +143,7 @@ def test_price_increase_below_init_price():
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
@@ -182,7 +182,7 @@ def test_price_increase_above_init_price():
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
@@ -221,7 +221,7 @@ def test_price_decreased_above_init_price(tmp_path):
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
@@ -260,7 +260,7 @@ def test_price_decreased_below_init_price(tmp_path):
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
@@ -299,7 +299,7 @@ def test_price_decreased_hitting_init_price(tmp_path):
 
     alert = Alert(
         actions=actions,
-        dt=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
         price=price,
