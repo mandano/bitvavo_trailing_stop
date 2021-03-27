@@ -236,13 +236,15 @@ class Alert(object):
 class CreateAlert(object):
     _client: BitvavoClient = None
     file_name = 'new_alert.json'
-    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+    alerts_file_path = None
 
     alert = None
 
     market = None
 
     def __init__(self, **kwargs):
+        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
@@ -342,10 +344,12 @@ class CreateAlert(object):
 class AlertHandler(object):
     alerts_file_name = 'alerts.json'
     new_alert_file_name = 'new_alert.json'
-    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+    alerts_file_path = None
     alerts = list()
 
     def __init__(self, **kwargs):
+        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
