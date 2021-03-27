@@ -81,7 +81,7 @@ def get_alert(**kwargs):
         elif client_response_ticker_price_scenario == 'decreased':
             client_response_ticker_price = fake.pydecimal(min_value=int(trailing_price+1), max_value=int(price-1))
 
-    dt = fake.date_time()
+    dt = fake.date_time() + datetime.timedelta(microseconds=1)
 
     return Alert(
         amount=None,
