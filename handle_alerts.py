@@ -110,8 +110,9 @@ class Alert(object):
     changedAttributes = []
 
     actions = []
-    dt: str = None
+    dt: datetime = None
     init_price: Decimal = None
+    init_dt: datetime = None
     market: str = None
     price: Decimal = None
     status: str = None
@@ -134,6 +135,7 @@ class Alert(object):
             'amount': self.amount,
             'actions': self.actions,
             'dt': self.dt,
+            'init_dt': self.init_dt,
             'init_price': self.init_price,
             'market': self.market,
             'price': self.price,
@@ -159,15 +161,19 @@ class Alert(object):
                 self.init_price = price
                 self.changedAttributes.append('init_price')
 
+            dt = datetime.datetime.now()
+
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
-            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.init_dt = dt
+            self.dt = dt
             self.status = self.STATUS_ACTIVE
 
             self.changedAttributes.extend([
                 'trailing_price',
                 'price',
                 'dt',
+                'init_dt'
                 'status'
             ])
 
@@ -176,7 +182,7 @@ class Alert(object):
         # trailing price hit
         if price <= self.trailing_price:
             self.price = price
-            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.dt = datetime.datetime.now()
             self.status = self.STATUS_HIT
 
             self.changedAttributes = [
@@ -191,7 +197,7 @@ class Alert(object):
         if price > self.price and price > self.init_price:
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
-            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
                 'trailing_price'
@@ -204,7 +210,7 @@ class Alert(object):
         # price increased but below init price
         if price > self.price:
             self.price = price
-            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
                 'price',
@@ -216,7 +222,7 @@ class Alert(object):
         # price decreased
         if price <= self.price:
             self.price = price
-            self.dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
                 'price',
@@ -365,7 +371,8 @@ class AlertHandler(object):
         for idx, alert in enumerate(alerts):
             alert = Alert(
                 actions=alert['actions'],
-                dt=alert['dt'],
+                dt=datetime.datetime.strptime(alert['dt'], "%Y-%m-%d %H:%M:%S"),
+                init_dt=datetime.datetime.strptime(alert['init_dt'], "%Y-%m-%d %H:%M:%S"),
                 init_price=alert['init_price'],
                 market=alert['market'],
                 price=alert['price'],
@@ -386,7 +393,7 @@ class AlertHandler(object):
             alerts.append(alert.attributes())
 
         with open(self.alerts_file_name, 'w') as fp:
-            json.dump(alerts, fp, indent=4, sort_keys=True)
+            json.dump(alerts, fp, indent=4, sort_keys=True, default=str)
 
     @classmethod
     def get_decimal(cls, s):
