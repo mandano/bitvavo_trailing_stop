@@ -240,7 +240,14 @@ class CreateAlert(object):
 
     alert = None
 
+    actions = list()
+    alert_init_price = None
+    alert_trailing_percentage = None
     market = None
+
+    actions_selection = None
+    init_price_type = None
+    market_selection_type = None
 
     def __init__(self, **kwargs):
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
@@ -261,40 +268,49 @@ class CreateAlert(object):
         print('Input new alert data:')
         print('---------------------')
 
-        market = self.choose_market()
-
-        self.alert = Alert(_client=BitvavoClient(market=market))
-        self.alert.market = market
+        if self.market is None:
+            self.choose_market()
 
         print('Add new init price:')
         print(' [1] Use manual value')
         print(' [2] Set by market')
 
-        init_price_type = input()
+        if self.init_price_type is None:
+            self.init_price_type = input()
 
-        if init_price_type == '1':
+        if self.init_price_type == '1' and self.alert_init_price is None:
             print('Type in your value for init price as string like "2345.43"')
-            self.alert.init_price = Decimal(input())
+            self.alert_init_price = Decimal(input())
 
-        print('Insert trail in percentage like ["0.9", "0.45"]')
-        self.alert.trailing_percentage = Decimal(input())
+        if self.alert_trailing_percentage is None:
+            print('Insert trail in percentage like ["0.9", "0.45"]')
+            self.alert_trailing_percentage = Decimal(input())
 
-        print('Which actions should be activated?')
-        print('[1] Send e-mail')
-        print('[2] Sell')
-        print('[3] Send e-mail and sell')
+        if self.actions_selection is None:
+            print('Which actions should be activated?')
+            print('[1] Send e-mail')
+            print('[2] Sell')
+            print('[3] Send e-mail and sell')
 
-        actions_selection = input()
+            self.actions_selection = input()
 
-        if actions_selection == '1':
-            self.alert.actions.append(Alert.ACTION_SEND_EMAIL)
-        if actions_selection == '2':
-            self.alert.actions.append(Alert.ACTION_SELL_ASSET)
-        elif actions_selection == '3':
-            self.alert.actions.extend([
-                Alert.ACTION_SEND_EMAIL,
-                Alert.ACTION_SELL_ASSET
-            ])
+            if self.actions_selection == '1':
+                self.actions.append(Alert.ACTION_SEND_EMAIL)
+            if self.actions_selection == '2':
+                self.actions.append(Alert.ACTION_SELL_ASSET)
+            elif self.actions_selection == '3':
+                self.actions.extend([
+                    Alert.ACTION_SEND_EMAIL,
+                    Alert.ACTION_SELL_ASSET
+                ])
+
+        self.alert = Alert(
+            actions=self.actions,
+            init_price=self.alert_init_price,
+            trailing_percentage=self.alert_trailing_percentage,
+            market=self.market,
+            _client=BitvavoClient(market=self.market)
+        )
 
         self.alert.update_by_client()
         self.save_alert()
@@ -307,27 +323,27 @@ class CreateAlert(object):
         print(' [1] Type in your market string')
         print(' [2] List supported markets')
 
-        market_selection_type = input()
+        self.market_selection_type = input()
 
-        if market_selection_type == '1':
+        if self.market_selection_type == '1':
             print('Type in your market string')
-            market = input()
-        elif market_selection_type == '2':
+            self.market = input()
+        elif self.market_selection_type == '2':
             markets = self._client.get_markets()
 
             print('Supported markets:')
             print(json.dumps(markets, indent=4, sort_keys=True))
 
-            market = self.choose_market()
+            self.market = self.choose_market()
         else:
             print('Input not recognized.')
             exit(1)
 
-        if not self.is_market_supported(market):
+        if not self.is_market_supported(self.market):
             print('Market string not supported.')
             exit(1)
 
-        return market
+        return self.market
 
     def is_market_supported(self, market):
         remote_market = self._client.get_markets(market)
