@@ -1,0 +1,4 @@
+[jobs]
+- name: UpdateAlerts
+  cmd: python3 /usr/src/app/handle_alerts.py
+  time: 0 * * * * *
