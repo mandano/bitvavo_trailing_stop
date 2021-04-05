@@ -1,0 +1,12 @@
+version: '3.3'
+
+services:
+  update_alerts:
+    container_name: update_alerts
+    build: docker/update_alerts
+    working_dir: /usr/src/app
+    volumes:
+    - .:/usr/src/app
+    restart: always
+    command: /usr/lib/x86_64-linux-gnu/jobberrunner -u /var/jobber/1000/cmd.sock /home/jobberuser/.jobber
+
