@@ -433,14 +433,14 @@ class AlertHandler(object):
 
     def update_alerts(self):
         for idx, alert in enumerate(self.alerts):
-            if alert.market in self._ticker_prices:
+            """if alert.market in self._ticker_prices:
                 self.alerts[idx]._client._response_ticker_price = {
                     'price': self._ticker_prices[alert.market],
                     'market': alert.market
-                }
+                }"""
 
             alert.update_by_client()
-            self._ticker_prices[alert.market] = alert.price
+            #self._ticker_prices[alert.market] = alert.price
 
             if not alert.changedAttributes:
                 continue
