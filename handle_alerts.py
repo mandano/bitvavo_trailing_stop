@@ -251,6 +251,24 @@ class CreateAlert(object):
     market_selection_type = None
 
     def __init__(self, **kwargs):
+        if len(sys.argv) > 1:
+            self.alert_trailing_percentage = Decimal(sys.argv[1])
+
+        if len(sys.argv) > 2:
+            self.market_selection_type = sys.argv[2]
+
+        if len(sys.argv) > 3:
+            self.market = sys.argv[3]
+
+        if len(sys.argv) > 4:
+            self.actions_selection = sys.argv[4]
+
+        if len(sys.argv) > 5:
+            self.init_price_type = Decimal(sys.argv[5])
+
+        if len(sys.argv) > 6:
+            self.alert_init_price = Decimal(sys.argv[6])
+
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
 
         for k, v in kwargs.items():
