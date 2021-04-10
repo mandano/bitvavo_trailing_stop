@@ -313,15 +313,15 @@ class CreateAlert(object):
 
             self.actions_selection = input()
 
-            if self.actions_selection == '1':
-                self.actions.append(Alert.ACTION_SEND_EMAIL)
-            if self.actions_selection == '2':
-                self.actions.append(Alert.ACTION_SELL_ASSET)
-            elif self.actions_selection == '3':
-                self.actions.extend([
-                    Alert.ACTION_SEND_EMAIL,
-                    Alert.ACTION_SELL_ASSET
-                ])
+        if self.actions_selection == '1':
+            self.actions.append(Alert.ACTION_SEND_EMAIL)
+        if self.actions_selection == '2':
+            self.actions.append(Alert.ACTION_SELL_ASSET)
+        elif self.actions_selection == '3':
+            self.actions.extend([
+                Alert.ACTION_SEND_EMAIL,
+                Alert.ACTION_SELL_ASSET
+            ])
 
         self.alert = Alert(
             actions=self.actions,
