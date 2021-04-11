@@ -34,7 +34,7 @@ class Trade(object):
             str(amount)
         )
 
-        Messages.send_email(json.dumps(response, indent=4, sort_keys=True))
+        Messages.send_email(json.dumps(response, indent=4, sort_keys=True), "Sell request result.")
 
         if 'orderId' in response:
             return True
