@@ -23,11 +23,6 @@ class Trade(object):
         else:
             amount = self._alert.amount
 
-        try:
-            amount
-        except NameError:
-            return False
-
         response = self._client.place_order(
             BitvavoClient.SIDE_SELL,
             BitvavoClient.ORDER_TYPE,
