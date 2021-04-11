@@ -1,6 +1,8 @@
 import datetime
 from decimal import Decimal
-from handle_alerts import BitvavoClient, Alert
+
+from models.Alert import Alert
+from models.clients.Bitvavo import BitvavoClient
 
 file_name = "alerts.json"
 

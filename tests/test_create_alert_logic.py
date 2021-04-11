@@ -1,7 +1,8 @@
 import json
 from decimal import Decimal
 
-from handle_alerts import CreateAlert, BitvavoClient
+from models.CreateAlert import CreateAlert
+from models.clients.Bitvavo import BitvavoClient
 
 
 def get_decimal(s):
