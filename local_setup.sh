@@ -1,6 +1,6 @@
 #! /bin/bash
 
-sudo apt-get install python3-venv pip3
+sudo apt-get install python3-venv python3-pip
 
 python3 -m venv bitvavo_trailing_stop
 
