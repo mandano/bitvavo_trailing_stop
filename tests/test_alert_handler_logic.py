@@ -3,7 +3,10 @@ from decimal import Decimal
 
 import simplejson as json
 from faker import Faker
-from handle_alerts import AlertHandler, Alert, BitvavoClient
+
+from models.Alert import Alert
+from models.AlertHandler import AlertHandler
+from models.clients.Bitvavo import BitvavoClient
 
 file_name = "alerts.json"
 
