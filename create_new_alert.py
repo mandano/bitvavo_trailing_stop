@@ -1,4 +1,5 @@
-from handle_alerts import CreateAlert, BitvavoClient
+from models.CreateAlert import CreateAlert
+from models.clients.Bitvavo import BitvavoClient
 
 if __name__ == '__main__':
     ca = CreateAlert(_client=BitvavoClient())
