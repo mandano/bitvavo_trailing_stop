@@ -12,14 +12,16 @@ from models.clients.Bitvavo import BitvavoClient
 
 
 class AlertHandler(object):
-    alerts_file_name = 'alerts.json'
-    new_alert_file_name = 'new_alert.json'
-    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+    alerts_file_name: str = None
+    new_alert_file_name: str = None
+    alerts_file_path: str = None
     alerts = list()
     _ticker_prices = {}
 
     def __init__(self, **kwargs):
+        self.alerts_file_name = os.environ.get('ALERTS_FILE_NAME')
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+        self.new_alert_file_name = os.environ.get('NEW_ALERTS_FILE_NAME')
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
