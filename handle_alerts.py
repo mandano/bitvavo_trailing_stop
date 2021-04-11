@@ -329,7 +329,7 @@ class CreateAlert(object):
             init_price=self.alert_init_price,
             trailing_percentage=self.alert_trailing_percentage,
             market=self.market,
-            _client=BitvavoClient(market=self.market)
+            _client=self._client
         )
 
         self.alert.update_by_client()
