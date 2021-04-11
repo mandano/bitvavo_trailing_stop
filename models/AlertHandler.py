@@ -109,4 +109,4 @@ class AlertHandler(object):
                 trade.sell()
 
             if Alert.ACTION_SEND_EMAIL in alert.actions:
-                Messages.send_email(json.dumps(alert.attributes(), indent=4, sort_keys=True))
+                Messages.send_email(json.dumps(alert.attributes(), indent=4, sort_keys=True, default=str))
