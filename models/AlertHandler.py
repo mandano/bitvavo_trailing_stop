@@ -56,6 +56,7 @@ class AlertHandler(object):
         for idx, alert in enumerate(alerts):
             alert = Alert(
                 actions=alert['actions'],
+                amount=alert['amount'],
                 dt=datetime.datetime.strptime(alert['dt'], "%Y-%m-%d %H:%M:%S.%f"),
                 init_dt=datetime.datetime.strptime(alert['init_dt'], "%Y-%m-%d %H:%M:%S.%f"),
                 init_price=alert['init_price'],
