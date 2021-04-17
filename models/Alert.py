@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 from models.clients.Bitvavo import BitvavoClient
+from models.clients.Cryptowatch import CryptowatchClient
 
 
 class Alert(object):
@@ -21,14 +22,43 @@ class Alert(object):
     init_dt: datetime = None
     market: str = None
     price: Decimal = None
+    backup_price: Decimal = None
     status: str = None
     trailing_percentage: Decimal = None
     trailing_price: Decimal = None
     amount: Decimal = None
 
+    _price_diversion_threshold = Decimal('0.01')
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             self.__setattr__(k, v)
+
+    def is_ticker_price_diverted(self):
+        """
+        Check price against third party ticker price
+        :return:
+        """
+
+        market_str_spl = self.market.split('-')
+
+        currency = market_str_spl[1].lower()
+        coin = market_str_spl[0].lower()
+
+        cw = CryptowatchClient(
+            _currency=currency,
+            _coin=coin
+        )
+
+        self.backup_price = cw.get_ticker_price()
+
+        lower_th = self.backup_price * (1 - self._price_diversion_threshold)
+        upper_th = self.backup_price * (1 + self._price_diversion_threshold)
+
+        if lower_th < self.price < upper_th:
+            return True
+
+        return False
 
     def get_symbol(self):
         if self.market is None:

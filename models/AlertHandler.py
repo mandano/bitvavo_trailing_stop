@@ -104,6 +104,22 @@ class AlertHandler(object):
             if alert.STATUS_HIT != alert.status:
                 continue
 
+            if not alert.is_ticker_price_diverted():
+                Messages.send_email(
+                    json.dumps(
+                        {
+                            "alert_price": alert.price,
+                            "backup_price": alert.backup_price
+                        },
+                        indent=4,
+                        sort_keys=True,
+                        default=str
+                    ),
+                    'Ticker price diversion'
+                )
+
+                continue
+
             if Alert.ACTION_SELL_ASSET in alert.actions:
                 trade = Trade(
                     _client=BitvavoClient(market=alert.market),
