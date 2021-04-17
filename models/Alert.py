@@ -13,6 +13,7 @@ class Alert(object):
     ACTION_SELL_ASSET = 'sell_asset'
 
     _client: BitvavoClient = None
+    _price_diversion_threshold = None
 
     changedAttributes = []
 
@@ -28,9 +29,9 @@ class Alert(object):
     trailing_price: Decimal = None
     amount: Decimal = None
 
-    _price_diversion_threshold = Decimal('0.01')
-
     def __init__(self, **kwargs):
+        self._price_diversion_threshold = Decimal('0.01')
+
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
