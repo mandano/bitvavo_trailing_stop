@@ -95,20 +95,20 @@ class AlertHandler(object):
                     'market': alert.market
                 }"""
 
-            updated = alert.update_by_client()
+            updated = self.alerts[idx].update_by_client()
 
             if updated is False:
                 continue
 
-            if alert.status != alert.STATUS_HIT:
+            if self.alerts[idx].status != self.alerts[idx].STATUS_HIT:
                 continue
 
-            if alert.is_ticker_price_diverted():
+            if self.alerts[idx].is_ticker_price_diverted():
                 Messages.send_email(
                     json.dumps(
                         {
-                            "alert_price": alert.price,
-                            "backup_price": alert.backup_price
+                            "alert_price": self.alerts[idx].price,
+                            "backup_price": self.alerts[idx].backup_price
                         },
                         indent=4,
                         sort_keys=True,
@@ -119,12 +119,12 @@ class AlertHandler(object):
 
                 continue
 
-            if Alert.ACTION_SELL_ASSET in alert.actions:
+            if Alert.ACTION_SELL_ASSET in self.alerts[idx].actions:
                 trade = Trade(
-                    _client=BitvavoClient(market=alert.market),
-                    _alert=alert
+                    _client=BitvavoClient(market=self.alerts[idx].market),
+                    _alert=self.alerts[idx]
                 )
                 trade.sell()
 
-            if Alert.ACTION_SEND_EMAIL in alert.actions:
-                Messages.send_email(json.dumps(alert.attributes(), indent=4, sort_keys=True, default=str))
+            if Alert.ACTION_SEND_EMAIL in self.alerts[idx].actions:
+                Messages.send_email(json.dumps(self.alerts[idx].attributes(), indent=4, sort_keys=True, default=str))
