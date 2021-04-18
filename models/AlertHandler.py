@@ -33,24 +33,16 @@ class AlertHandler(object):
         alerts = list()
 
         try:
-            if not os.path.isfile(self.alerts_file_path + self.alerts_file_name):
-                Path(self.alerts_file_name).touch()
-
             with open(self.alerts_file_path + self.alerts_file_name, 'r') as fp:
                 alerts = json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal)
         except FileNotFoundError:
             logging.info('No alert file.')
+            Path(self.alerts_file_path + self.alerts_file_name).touch()
+            logging.info('Created alert file.')
+
+            return
         except simplejson.errors.JSONDecodeError as e:
             logging.info(e)
-
-        if os.path.isfile(self.alerts_file_path + self.new_alert_file_name):
-            try:
-                with open(self.alerts_file_path + self.new_alert_file_name, 'r') as fp:
-                    alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
-
-                os.remove(self.alerts_file_path + self.new_alert_file_name)
-            except simplejson.errors.JSONDecodeError as e:
-                logging.info(e)
 
         if not alerts:
             logging.warning("No alerts set.")
