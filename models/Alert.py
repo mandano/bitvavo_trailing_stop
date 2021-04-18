@@ -138,7 +138,7 @@ class Alert(object):
 
             self.changedAttributes = [
                 'price',
-                'dt',
+                'dt'
             ]
 
             return True
@@ -151,7 +151,7 @@ class Alert(object):
             self.changedAttributes = [
                 'trailing_price',
                 'price',
-                'dt',
+                'dt'
             ]
 
             return True
