@@ -149,7 +149,7 @@ class Alert(object):
             self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
-                'trailing_price'
+                'trailing_price',
                 'price',
                 'dt',
             ]
