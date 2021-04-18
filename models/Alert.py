@@ -87,7 +87,7 @@ class Alert(object):
         self.changedAttributes = []
 
         if self.status == self.STATUS_HIT:
-            return None
+            return False
 
         if self.market is None:
             return False

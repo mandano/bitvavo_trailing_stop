@@ -95,13 +95,15 @@ class AlertHandler(object):
                     'market': alert.market
                 }"""
 
-            alert.update_by_client()
-            # self._ticker_prices[alert.market] = alert.price
+            updated = alert.update_by_client()
+
+            if updated is False:
+                continue
 
             if not alert.changedAttributes:
                 continue
 
-            if alert.STATUS_HIT != alert.status:
+            if alert.status != alert.STATUS_HIT:
                 continue
 
             if alert.is_ticker_price_diverted():
