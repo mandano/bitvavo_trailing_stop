@@ -100,9 +100,6 @@ class AlertHandler(object):
             if updated is False:
                 continue
 
-            if not alert.changedAttributes:
-                continue
-
             if alert.status != alert.STATUS_HIT:
                 continue
 
