@@ -104,7 +104,7 @@ class AlertHandler(object):
             if alert.STATUS_HIT != alert.status:
                 continue
 
-            if not alert.is_ticker_price_diverted():
+            if alert.is_ticker_price_diverted():
                 Messages.send_email(
                     json.dumps(
                         {

@@ -57,9 +57,9 @@ class Alert(object):
         upper_th = self.backup_price * (1 + self._price_diversion_threshold)
 
         if lower_th < self.price < upper_th:
-            return True
+            return False
 
-        return False
+        return True
 
     def get_symbol(self):
         if self.market is None:
