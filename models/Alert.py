@@ -13,6 +13,7 @@ class Alert(object):
     ACTION_SELL_ASSET = 'sell_asset'
 
     _client: BitvavoClient = None
+    _client_backup: CryptowatchClient = None
     _price_diversion_threshold = None
 
     changedAttributes = []
@@ -46,12 +47,13 @@ class Alert(object):
         currency = market_str_spl[1].lower()
         coin = market_str_spl[0].lower()
 
-        cw = CryptowatchClient(
-            _currency=currency,
-            _coin=coin
-        )
+        if self._client_backup is None:
+            self._client_backup = CryptowatchClient(
+                _currency=currency,
+                _coin=coin
+            )
 
-        self.backup_price = cw.get_ticker_price()
+        self.backup_price = self._client_backup.get_ticker_price()
 
         lower_th = self.backup_price * (1 - self._price_diversion_threshold)
         upper_th = self.backup_price * (1 + self._price_diversion_threshold)
