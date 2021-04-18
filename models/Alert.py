@@ -130,8 +130,18 @@ class Alert(object):
 
             return True
 
-        # price increased and above init price
-        if price > self.price and price > self.init_price:
+        if price <= self.price:
+            self.price = price
+            self.dt = datetime.datetime.now()
+
+            self.changedAttributes = [
+                'price',
+                'dt',
+            ]
+
+            return True
+
+        if price > self.price:
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
             self.dt = datetime.datetime.now()
@@ -144,26 +154,3 @@ class Alert(object):
 
             return True
 
-        # price increased but below init price
-        if price > self.price:
-            self.price = price
-            self.dt = datetime.datetime.now()
-
-            self.changedAttributes = [
-                'price',
-                'dt',
-            ]
-
-            return True
-
-        # price decreased
-        if price <= self.price:
-            self.price = price
-            self.dt = datetime.datetime.now()
-
-            self.changedAttributes = [
-                'price',
-                'dt',
-            ]
-
-            return True
