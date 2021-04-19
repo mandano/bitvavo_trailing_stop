@@ -95,7 +95,10 @@ class Alert(object):
         if self.market is None:
             return False
 
-        price = Decimal(self._client.get_ticker_price())
+        price = self._client.get_ticker_price()
+
+        if price is None:
+            return False
 
         """# first time
         if self.status is None:
