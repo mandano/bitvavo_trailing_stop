@@ -97,7 +97,7 @@ class Alert(object):
 
         price = Decimal(self._client.get_ticker_price())
 
-        # first time
+        """# first time
         if self.status is None:
             if self.init_price is None:
                 self.init_price = price
@@ -119,7 +119,7 @@ class Alert(object):
                 'status'
             ])
 
-            return True
+            return True"""
 
         # trailing price hit
         if price <= self.trailing_price:
