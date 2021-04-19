@@ -16,9 +16,9 @@ class Alert(object):
     _client_backup: CryptowatchClient = None
     _price_diversion_threshold = None
 
-    changedAttributes = []
+    changedAttributes: list = None
 
-    actions = []
+    actions: list = None
     dt: datetime = None
     init_price: Decimal = None
     init_dt: datetime = None
@@ -31,6 +31,9 @@ class Alert(object):
     amount: Decimal = None
 
     def __init__(self, **kwargs):
+        self.changedAttributes = []
+        self.actions = []
+
         self._price_diversion_threshold = Decimal('0.01')
 
         for k, v in kwargs.items():

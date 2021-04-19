@@ -15,10 +15,12 @@ class AlertHandler(object):
     alerts_file_name: str = None
     new_alert_file_name: str = None
     alerts_file_path: str = None
-    alerts = list()
-    _ticker_prices = {}
+    alerts: list = None
+    _ticker_prices: dict = None
 
     def __init__(self, **kwargs):
+        self._ticker_prices = {}
+        self.alerts = []
         self.alerts_file_name = os.environ.get('ALERTS_FILE_NAME')
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
         self.new_alert_file_name = os.environ.get('NEW_ALERTS_FILE_NAME')

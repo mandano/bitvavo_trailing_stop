@@ -8,12 +8,12 @@ from models.clients.Bitvavo import BitvavoClient
 
 class CreateAlert(object):
     _client: BitvavoClient = None
-    file_name = 'new_alert.json'
-    alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+    file_name: str = 'new_alert.json'
+    alerts_file_path: str = None
 
     alert = None
 
-    actions = list()
+    actions: list = None
     alert_init_price = None
     alert_trailing_percentage = None
     market = None
@@ -23,6 +23,9 @@ class CreateAlert(object):
     market_selection_type = None
 
     def __init__(self, **kwargs):
+        self.actions = []
+        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
+
         if 'test_create_alert_logic' not in sys.argv[1]:
             if len(sys.argv) > 1:
                 self.alert_trailing_percentage = Decimal(sys.argv[1])
