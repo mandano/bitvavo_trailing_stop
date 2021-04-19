@@ -42,7 +42,7 @@ class BitvavoClient(Bitvavo):
         if self.market is None:
             logging.error('bitvavo: Market attribute not set.')
 
-            exit(1)
+            return None
 
         if self._response_ticker_price is None:
             self._response_ticker_price = self.tickerPrice({'market': self.market})
@@ -59,7 +59,7 @@ class BitvavoClient(Bitvavo):
 
             return Decimal(self._response_ticker_price['price'])
 
-        return self._response_ticker_price['price']
+        return Decimal(self._response_ticker_price['price'])
 
     def place_order(self, side: str, order_type: str, amount: str):
         self._response_order = self.placeOrder(
