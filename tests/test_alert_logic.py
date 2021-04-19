@@ -170,7 +170,7 @@ def test_price_increase_below_init_price():
     assert alert.price == ticker_price
     assert alert.status == Alert.STATUS_ACTIVE
     assert alert.trailing_percentage == trailing_percentage
-    assert alert.trailing_price == trailing_price
+    assert alert.trailing_price == ticker_price * trailing_percentage
 
 
 def test_price_increase_above_init_price():
