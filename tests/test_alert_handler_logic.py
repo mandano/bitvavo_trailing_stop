@@ -11,54 +11,6 @@ from models.clients.Bitvavo import BitvavoClient
 file_name = "alerts.json"
 
 
-def test_load_alerts_from_file(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-
-    alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
-    alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
-
-    with open(str(d) + '/' + file_name, 'w') as fp:
-        json.dump([
-                alert_0.attributes(),
-                alert_1.attributes()
-            ],
-            fp,
-            indent=4,
-            sort_keys=True,
-            default=str
-        )
-
-    ah = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
-
-    assert ah.alerts[0].attributes() == alert_0.attributes()
-    assert ah.alerts[1].attributes() == alert_1.attributes()
-
-
-def test_save_alerts_from_file(tmp_path):
-    d = tmp_path / "sub"
-    d.mkdir()
-
-    alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
-    alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
-
-    ah_save = AlertHandler(
-        alerts_file_path=str(d) + '/',
-        alerts_file_name=file_name,
-        alerts=[
-            alert_0,
-            alert_1
-        ]
-    )
-
-    ah_save.save_alerts()
-
-    ah_load = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
-
-    assert ah_load.alerts[0].attributes() == alert_0.attributes()
-    assert ah_load.alerts[1].attributes() == alert_1.attributes()
-
-
 def get_alert(**kwargs):
     status = kwargs.get("status")
     client_response_ticker_price_scenario = kwargs.get("client_response_ticker_price_scenario")
@@ -107,6 +59,54 @@ def get_alert(**kwargs):
             }
         )
     )
+
+
+def test_load_alerts_from_file(tmp_path):
+    d = tmp_path / "sub"
+    d.mkdir()
+
+    alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
+    alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
+
+    with open(str(d) + '/' + file_name, 'w') as fp:
+        json.dump([
+                alert_0.attributes(),
+                alert_1.attributes()
+            ],
+            fp,
+            indent=4,
+            sort_keys=True,
+            default=str
+        )
+
+    ah = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
+
+    assert ah.alerts[0].attributes() == alert_0.attributes()
+    assert ah.alerts[1].attributes() == alert_1.attributes()
+
+
+def test_save_alerts_from_file(tmp_path):
+    d = tmp_path / "sub"
+    d.mkdir()
+
+    alert_0 = get_alert(status=Alert.STATUS_ACTIVE)
+    alert_1 = get_alert(status=Alert.STATUS_ACTIVE)
+
+    ah_save = AlertHandler(
+        alerts_file_path=str(d) + '/',
+        alerts_file_name=file_name,
+        alerts=[
+            alert_0,
+            alert_1
+        ]
+    )
+
+    ah_save.save_alerts()
+
+    ah_load = AlertHandler(alerts_file_path=str(d) + '/', alerts_file_name=file_name)
+
+    assert ah_load.alerts[0].attributes() == alert_0.attributes()
+    assert ah_load.alerts[1].attributes() == alert_1.attributes()
 
 
 def test_update_alerts(tmp_path):
