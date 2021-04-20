@@ -125,7 +125,7 @@ class Alert(object):
             return True"""
 
         # trailing price hit
-        if price <= self.trailing_price:
+        if price.compare(self.trailing_price) == -1:
             self.price = price
             self.dt = datetime.datetime.now()
             self.status = self.STATUS_HIT
@@ -138,7 +138,7 @@ class Alert(object):
 
             return True
 
-        if price <= self.price:
+        if price.compare(self.price) == -1:
             self.price = price
             self.dt = datetime.datetime.now()
 
@@ -149,7 +149,7 @@ class Alert(object):
 
             return True
 
-        if price > self.price:
+        if price.compare(self.price) == 1:
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
             self.dt = datetime.datetime.now()
