@@ -162,3 +162,38 @@ class Alert(object):
 
             return True
 
+    def init_attributes(self):
+        self.changedAttributes = []
+
+        if self.status is not None:
+            logging.debug('ALERT:init_attr:already_initiated')
+
+            return False
+
+        price = self._client.get_ticker_price()
+
+        if price is None:
+            logging.warning('ALERT:init_attr:PRICE_IS_NONE:' + str(self.attributes()))
+
+            return False
+
+        self.init_price = price
+
+        dt = datetime.datetime.now()
+
+        self.trailing_price = price * Decimal(self.trailing_percentage)
+        self.price = price
+        self.init_dt = dt
+        self.dt = dt
+        self.status = self.STATUS_ACTIVE
+
+        self.changedAttributes.extend([
+            'init_price',
+            'trailing_price',
+            'price',
+            'dt',
+            'init_dt',
+            'status'
+        ])
+
+        return True
