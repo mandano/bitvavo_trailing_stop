@@ -9,7 +9,7 @@ import main
 
 class CreateAlert(object):
     _client: BitvavoClient = None
-    file_name: str = 'new_alert.json'
+    file_name: str = os.environ.get('ALERTS_FILE_NAME')
     alerts_file_path: str = None
 
     alert = None
