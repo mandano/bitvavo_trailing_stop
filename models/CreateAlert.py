@@ -100,12 +100,15 @@ class CreateAlert(object):
                 Alert.ACTION_SELL_ASSET
             ])
 
+        if self._client is None:
+            self._client = BitvavoClient(market=self.market)
+
         self.alert = Alert(
             actions=self.actions,
             init_price=self.alert_init_price,
             trailing_percentage=self.alert_trailing_percentage,
             market=self.market,
-            _client=BitvavoClient(market=self.market)
+            _client=self._client
         )
 
         if not self.alert.init_attributes():
