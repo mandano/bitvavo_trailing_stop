@@ -198,10 +198,17 @@ def test_update_by_client_price_hit():
 def test_update_by_client_price_increased():
     alert = get_alert(status=Alert.STATUS_ACTIVE, client_response_ticker_price_scenario='increased')
 
+    old_trailing_price = alert.trailing_price
+
     updated = alert.update_by_client()
 
     assert updated == True
-    assert alert.changedAttributes == ['trailing_price', 'price', 'dt']
+
+    if old_trailing_price < alert.trailing_price:
+        assert alert.changedAttributes == ['price', 'dt']
+    else:
+        assert alert.changedAttributes == ['trailing_price', 'price', 'dt']
+
     assert Alert.STATUS_ACTIVE == alert.status
 
 
