@@ -4,6 +4,7 @@ import os
 from decimal import Decimal
 from models.Alert import Alert
 from models.clients.Bitvavo import BitvavoClient
+import main
 
 
 class CreateAlert(object):
@@ -26,7 +27,7 @@ class CreateAlert(object):
         self.actions = []
         self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
 
-        if 'test_create_alert_logic' not in sys.argv[1]:
+        if len(sys.argv) > 1 and 'test_create_alert_logic' not in sys.argv[1]:
             if len(sys.argv) > 1:
                 self.alert_trailing_percentage = Decimal(sys.argv[1])
 
@@ -104,10 +105,12 @@ class CreateAlert(object):
             init_price=self.alert_init_price,
             trailing_percentage=self.alert_trailing_percentage,
             market=self.market,
-            _client=self._client
+            _client=BitvavoClient(market=self.market)
         )
 
-        self.alert.update_by_client()
+        if not self.alert.init_attributes():
+            print('Error occurred.')
+
         self.save_alert()
 
         print('New alert created.')
