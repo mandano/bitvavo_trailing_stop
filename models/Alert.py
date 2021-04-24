@@ -1,4 +1,5 @@
 import datetime
+import logging
 from decimal import Decimal
 from models.clients.Bitvavo import BitvavoClient
 from models.clients.Cryptowatch import CryptowatchClient
@@ -89,43 +90,29 @@ class Alert(object):
     def update_by_client(self):
         self.changedAttributes = []
 
+        logging.debug('ALERT:UPDATE_BY_CLIENT:ATTRIBUTES_BEFORE_UPDATE:' + str(self.attributes()))
+
         if self.status == self.STATUS_HIT:
+            logging.debug('ALERT:UPDATE_BY_CLIENT:STATUS_IS_HIT:' + str(self.attributes()))
+
             return False
 
         if self.market is None:
+            logging.warning('ALERT:UPDATE_BY_CLIENT:MARKET_NOT_SET:' + str(self.attributes()))
+
             return False
 
         price = self._client.get_ticker_price()
 
         if price is None:
+            logging.warning('ALERT:UPDATE_BY_CLIENT:PRICE_IS_NONE:' + str(self.attributes()))
+
             return False
-
-        """# first time
-        if self.status is None:
-            if self.init_price is None:
-                self.init_price = price
-                self.changedAttributes.append('init_price')
-
-            dt = datetime.datetime.now()
-
-            self.trailing_price = price * Decimal(self.trailing_percentage)
-            self.price = price
-            self.init_dt = dt
-            self.dt = dt
-            self.status = self.STATUS_ACTIVE
-
-            self.changedAttributes.extend([
-                'trailing_price',
-                'price',
-                'dt',
-                'init_dt',
-                'status'
-            ])
-
-            return True"""
 
         # trailing price hit
         if price.compare(self.trailing_price) == -1:
+            logging.debug('ALERT:UPDATE_BY_CLIENT:TRAILING_PRICE_HIT')
+
             self.price = price
             self.dt = datetime.datetime.now()
             self.status = self.STATUS_HIT
@@ -136,9 +123,13 @@ class Alert(object):
                 'status'
             ]
 
+            logging.debug('ALERT:UPDATE_BY_CLIENT:ATTRIBUTES_AFTER_UPDATE:' + str(self.attributes()))
+
             return True
 
         if price.compare(self.price) == -1:
+            logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_DECREASED')
+
             self.price = price
             self.dt = datetime.datetime.now()
 
@@ -147,9 +138,13 @@ class Alert(object):
                 'dt'
             ]
 
+            logging.debug('ALERT:UPDATE_BY_CLIENT:ATTRIBUTES_AFTER_UPDATE:' + str(self.attributes()))
+
             return True
 
         if price.compare(self.price) == 1:
+            logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_INCREASED')
+
             self.trailing_price = price * Decimal(self.trailing_percentage)
             self.price = price
             self.dt = datetime.datetime.now()
@@ -159,6 +154,8 @@ class Alert(object):
                 'price',
                 'dt'
             ]
+
+            logging.debug('ALERT:UPDATE_BY_CLIENT:ATTRIBUTES_AFTER_UPDATE:' + str(self.attributes()))
 
             return True
 
