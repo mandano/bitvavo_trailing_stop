@@ -44,7 +44,17 @@ class AlertHandler(object):
 
             return
         except simplejson.errors.JSONDecodeError as e:
-            logging.info(e)
+            logging.warning(e)
+
+        try:
+            with open(self.alerts_file_path + self.new_alert_file_name, 'r') as fp:
+                alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
+
+            os.remove(self.alerts_file_path + self.new_alert_file_name)
+        except FileNotFoundError:
+            logging.debug('No new alert file.')
+        except simplejson.errors.JSONDecodeError as e:
+            logging.warning(e)
 
         if not alerts:
             logging.warning("No alerts set.")
@@ -67,6 +77,8 @@ class AlertHandler(object):
             )
 
             self.alerts.append(alert)
+
+        logging.debug('ALERT:load_alerts:loaded_alerts:' + str(self.alerts))
 
     def save_alerts(self):
         alerts = list()
