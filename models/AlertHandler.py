@@ -89,18 +89,14 @@ class AlertHandler(object):
         with open(self.alerts_file_path + self.alerts_file_name, 'w') as fp:
             json.dump(alerts, fp, indent=4, sort_keys=True, default=str)
 
+        logging.debug('ALERT:save_alerts:saved_alerts:' + str(alerts))
+
     @classmethod
     def get_decimal(cls, s):
         return Decimal(s)
 
     def update_alerts(self):
         for idx, alert in enumerate(self.alerts):
-            """if alert.market in self._ticker_prices:
-                self.alerts[idx]._client._response_ticker_price = {
-                    'price': self._ticker_prices[alert.market],
-                    'market': alert.market
-                }"""
-
             updated = self.alerts[idx].update_by_client()
 
             if updated is False:
