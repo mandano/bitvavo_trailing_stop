@@ -110,7 +110,7 @@ class Alert(object):
             return False
 
         # trailing price hit
-        if price.compare(self.trailing_price) == -1:
+        if price <= self.trailing_price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:TRAILING_PRICE_HIT')
 
             self.price = price
@@ -127,7 +127,7 @@ class Alert(object):
 
             return True
 
-        if price.compare(self.price) == -1:
+        if price < self.price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_DECREASED')
 
             self.price = price
@@ -142,7 +142,7 @@ class Alert(object):
 
             return True
 
-        if price.compare(self.price) == 1:
+        if price > self.price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_INCREASED')
 
             new_trailing_price = price * Decimal(self.trailing_percentage)
