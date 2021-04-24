@@ -145,12 +145,16 @@ class Alert(object):
         if price.compare(self.price) == 1:
             logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_INCREASED')
 
-            self.trailing_price = price * Decimal(self.trailing_percentage)
+            new_trailing_price = price * Decimal(self.trailing_percentage)
+
+            if new_trailing_price > self.trailing_price:
+                self.trailing_price = new_trailing_price
+                self.changedAttributes.append('trailing_price')
+
             self.price = price
             self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
-                'trailing_price',
                 'price',
                 'dt'
             ]
