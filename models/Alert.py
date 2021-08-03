@@ -92,6 +92,11 @@ class Alert(object):
 
         logging.debug('ALERT:UPDATE_BY_CLIENT:ATTRIBUTES_BEFORE_UPDATE:' + str(self.attributes()))
 
+        if self.status == self.STATUS_NOT_INIT:
+            logging.debug('ALERT:UPDATE_BY_CLIENT:STATUS_NOT_INIT:' + str(self.attributes()))
+
+            return False
+
         if self.status == self.STATUS_HIT:
             logging.debug('ALERT:UPDATE_BY_CLIENT:STATUS_IS_HIT:' + str(self.attributes()))
 
