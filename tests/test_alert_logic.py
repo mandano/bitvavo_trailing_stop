@@ -27,6 +27,7 @@ def test_populate_new_alert_init_price_set():
     init_price = Decimal('1000')
     ticker_price = Decimal('1511.7')
     trailing_percentage = Decimal('0.9')
+    trailing_price = ticker_price * trailing_percentage
 
     alert = Alert(
         actions=actions,
@@ -34,15 +35,14 @@ def test_populate_new_alert_init_price_set():
         init_price=init_price,
         market=market,
         price=init_price,
-        status=Alert.STATUS_NOT_INIT,
+        status=Alert.STATUS_ACTIVE,
         trailing_percentage=trailing_percentage,
-        trailing_price=None,
+        trailing_price=trailing_price,
         _client=BitvavoClient(
             market=market,
             _response_ticker_price={
                 "market": market,
                 "price": ticker_price
-
             }
         )
     )
@@ -62,35 +62,36 @@ def test_populate_new_alert_init_price_not_set():
     actions = []
     market = 'ETH-EUR'
     init_price = None
+    price = Decimal('1000')
     ticker_price = Decimal('1511.7')
     trailing_percentage = Decimal('0.9')
+    trailing_price = ticker_price * trailing_percentage
 
     alert = Alert(
         actions=actions,
         dt=datetime.datetime.now(),
         init_price=init_price,
         market=market,
-        price=init_price,
+        price=price,
         status=Alert.STATUS_NOT_INIT,
         trailing_percentage=trailing_percentage,
-        trailing_price=None,
+        trailing_price=trailing_price,
         _client=BitvavoClient(
             market=market,
             _response_ticker_price={
                 "market": market,
                 "price": ticker_price
-
             }
         )
     )
 
-    alert.update_by_client()
+    assert alert.update_by_client() is False
 
     assert alert.actions == actions
-    assert alert.init_price == ticker_price
+    assert alert.init_price is None
     assert alert.market == market
-    assert alert.price == ticker_price
-    assert alert.status == Alert.STATUS_ACTIVE
+    assert alert.price == price
+    assert alert.status == Alert.STATUS_NOT_INIT
     assert alert.trailing_percentage == trailing_percentage
     assert alert.trailing_price == trailing_percentage * ticker_price
 
@@ -157,12 +158,11 @@ def test_price_increase_below_init_price():
             _response_ticker_price={
                 "market": market,
                 "price": ticker_price
-
             }
         )
     )
 
-    alert.update_by_client()
+    assert alert.update_by_client() is True
 
     assert alert.actions == actions
     assert alert.init_price == init_price
@@ -170,7 +170,7 @@ def test_price_increase_below_init_price():
     assert alert.price == ticker_price
     assert alert.status == Alert.STATUS_ACTIVE
     assert alert.trailing_percentage == trailing_percentage
-    assert alert.trailing_price == ticker_price * trailing_percentage
+    assert alert.trailing_price == trailing_price
 
 
 def test_price_increase_above_init_price():
