@@ -107,18 +107,18 @@ class Alert(object):
 
             return False
 
-        price = self._client.get_ticker_price()
+        ticker_price = self._client.get_ticker_price()
 
-        if price is None:
+        if ticker_price is None:
             logging.warning('ALERT:UPDATE_BY_CLIENT:PRICE_IS_NONE:' + str(self.attributes()))
 
             return False
 
         # trailing price hit
-        if price <= self.trailing_price:
+        if ticker_price <= self.trailing_price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:TRAILING_PRICE_HIT')
 
-            self.price = price
+            self.price = ticker_price
             self.dt = datetime.datetime.now()
             self.status = self.STATUS_HIT
 
@@ -132,10 +132,10 @@ class Alert(object):
 
             return True
 
-        if price < self.price:
+        if ticker_price < self.price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_DECREASED')
 
-            self.price = price
+            self.price = ticker_price
             self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
@@ -147,16 +147,16 @@ class Alert(object):
 
             return True
 
-        if price > self.price:
+        if ticker_price > self.price:
             logging.debug('ALERT:UPDATE_BY_CLIENT:PRICE_INCREASED')
 
-            new_trailing_price = price * Decimal(self.trailing_percentage)
+            new_trailing_price = ticker_price * Decimal(self.trailing_percentage)
 
             if new_trailing_price > self.trailing_price:
                 self.trailing_price = new_trailing_price
                 self.changedAttributes.append('trailing_price')
 
-            self.price = price
+            self.price = ticker_price
             self.dt = datetime.datetime.now()
 
             self.changedAttributes = [
