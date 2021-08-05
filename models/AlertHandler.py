@@ -21,9 +21,9 @@ class AlertHandler(object):
     def __init__(self, **kwargs):
         self._ticker_prices = {}
         self.alerts = []
-        self.alerts_file_name = os.environ.get('ALERTS_FILE_NAME')
-        self.alerts_file_path = os.environ.get('ALERTS_FILE_PATH')
-        self.new_alert_file_name = os.environ.get('NEW_ALERTS_FILE_NAME')
+        self.alerts_file_name = kwargs.get('alerts_file_name') if 'alerts_file_name' in kwargs else os.environ.get('ALERTS_FILE_NAME')
+        self.alerts_file_path = kwargs.get('alerts_file_path') if 'alerts_file_path' in kwargs else os.environ.get('ALERTS_FILE_PATH')
+        self.new_alert_file_name = kwargs.get('new_alert_file_name') if 'new_alert_file_name' in kwargs else os.environ.get('NEW_ALERTS_FILE_NAME')
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -46,15 +46,17 @@ class AlertHandler(object):
         except simplejson.errors.JSONDecodeError as e:
             logging.warning(e)
 
-        try:
-            with open(self.alerts_file_path + self.new_alert_file_name, 'r') as fp:
-                alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
+        # load new alert from dedicated file
+        if self.new_alert_file_name is not None:
+            try:
+                with open(self.alerts_file_path + self.new_alert_file_name, 'r') as fp:
+                    alerts.append(json.load(fp, parse_float=self.get_decimal, parse_int=self.get_decimal))
 
-            os.remove(self.alerts_file_path + self.new_alert_file_name)
-        except FileNotFoundError:
-            logging.debug('No new alert file.')
-        except simplejson.errors.JSONDecodeError as e:
-            logging.warning(e)
+                os.remove(self.alerts_file_path + self.new_alert_file_name)
+            except FileNotFoundError:
+                logging.debug('No new alert file.')
+            except simplejson.errors.JSONDecodeError as e:
+                logging.warning(e)
 
         if not alerts:
             logging.warning("No alerts set.")
