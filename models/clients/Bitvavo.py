@@ -18,8 +18,8 @@ class BitvavoClient(Bitvavo):
 
     def __init__(self, **kwargs):
         super().__init__({
-            'APIKEY': os.environ.get('APIKEY'),
-            'APISECRET': os.environ.get('APISECRET')
+            'APIKEY': kwargs.get('api_key') if 'api_key' in kwargs else os.environ.get('APIKEY'),
+            'APISECRET': kwargs.get('api_secret') if 'api_secret' in kwargs else os.environ.get('APISECRET')
         })
 
         for k, v in kwargs.items():
